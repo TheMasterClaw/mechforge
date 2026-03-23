@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MECHFORGE — PROTOCOL ANALYTICS</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        :root {
+            --neon-blue: #00d4ff;
+            --neon-purple: #7b2cbf;
+            --neon-orange: #ff6b35;
+            --neon-pink: #ff006e;
+            --neon-green: #00ff88;
+            --dark-bg: #050510;
+            --panel-bg: rgba(5, 10, 20, 0.95);
+        }
+        
+        body {
+            font-family: 'Rajdhani', sans-serif;
+            background: var(--dark-bg);
+            color: #fff;
+            min-height: 100vh;
+        }
+        
+        .bg-grid {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                linear-gradient(rgba(0, 212, 255, 0.015) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 212, 255, 0.015) 1px, transparent 1px);
+            background-size: 30px 30px;
+            pointer-events: none;
+            z-index: 0;
+        }
+        
+        /* Header */
+        .header {
+            position: relative;
+            z-index: 10;
+            padding: 25px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(0, 212, 255, 0.15);
+            background: linear-gradient(180deg, rgba(5, 10, 20, 0.98) 0%, transparent 100%);
+        }
+        
+        .logo {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.6em;
+            font-weight: 900;
+            background: linear-gradient(90deg, var(--neon-blue), var(--neon-purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .nav-links {
+            display: flex;
+            gap: 25px;
+        }
+        
+        .nav-links a {
+            color: #888;
+            text-decoration: none;
+            font-weight: 600;
+            letter-spacing: 0.08em;
+            transition: color 0.3s ease;
+            text-transform: uppercase;
+            font-size: 0.8em;
+        }
+        
+        .nav-links a:hover, .nav-links a.active {
+            color: var(--neon-blue);
+        }
+        
+        /* Main */
+        .main-container {
+            position: relative;
+            z-index: 10;
+            padding: 30px 40px;
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+        
+        .page-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.8em;
+            font-weight: 700;
+            margin-bottom: 8px;
+            color: var(--neon-blue);
+        }
+        
+        .page-subtitle {
+            color: #666;
+            font-size: 0.95em;
+            margin-bottom: 30px;
+        }
+        
+        /* KPI Grid */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        
+        .kpi-card {
+            background: var(--panel-bg);
+            border: 1px solid rgba(0, 212, 255, 0.1);
+            padding: 20px;
+            text-align: center;
+            transition: all 0.3s ease;
+            clip-path: polygon(0 8px, 8px 0, calc(100% - 8px) 0, 100% 8px, 100% calc(100% - 8px), calc(100% - 8px) 100%, 8px 100%, 0 calc(100% - 8px));
+        }
+        
+        .kpi-card:hover {
+            border-color: rgba(0, 212, 255, 0.3);
+            transform: translateY(-3px);
+        }
+        
+        .kpi-icon {
+            font-size: 1.5em;
+            margin-bottom: 8px;
+        }
+        
+        .kpi-value {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.4em;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 3px;
+        }
+        
+        .kpi-value.positive { color: var(--neon-green); }
+        .kpi-value.negative { color: var(--neon-pink); }
+        
+        .kpi-label {
+            color: #666;
+            font-size: 0.7em;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+        }
+        
+        .kpi-change {
+            font-size: 0.75em;
+            margin-top: 5px;
+        }
+        
+        .kpi-change.positive { color: var(--neon-green); }
+        .kpi-change.negative { color: var(--neon-pink); }
+        
+        /* Dashboard Grid */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 25px;
+            margin-bottom: 25px;
+        }
+        
+        .panel {
+            background: var(--panel-bg);
+            border: 1px solid rgba(0, 212, 255, 0.1);
+            clip-path: polygon(0 10px, 10px 0, calc(100% - 10px) 0, 100% 10px, 100% calc(100% - 10px), calc(100% - 10px) 100%, 10px 100%, 0 calc(100% - 10px));
+        }
+        
+        .panel-header {
+            padding: 20px 25px;
+            border-bottom: 1px solid rgba(0, 212, 255, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .panel-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.85em;
+            color: var(--neon-blue);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .panel-title::before {
+            content: '◆';
+            color: var(--neon-orange);
+            font-size: 0.7em;
+        }
+        
+        .panel-actions {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .panel-btn {
+            background: rgba(0, 212, 255, 0.1);
+            border: 1px solid rgba(0, 212, 255, 0.2);
+            color: #888;
+            padding: 5px 12px;
+            font-size: 0.7em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: 'Rajdhani', sans-serif;
+        }
+        
+        .panel-btn:hover, .panel-btn.active {
+            background: rgba(0, 212, 255, 0.2);
+            color: var(--neon-blue);
+            border-color: var(--neon-blue);
+        }
+        
+        .panel-content {
+            padding: 25px;
+        }
+        
+        .chart-container {
+            height: 280px;
+        }
+        
+        /* Secondary Grid */
+        .secondary-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 25px;
+        }
+        
+        /* Activity Feed */
+        .activity-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .activity-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 15px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        
+        .activity-item:last-child {
+            border-bottom: none;
+        }
+        
+        .activity-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1em;
+            flex-shrink: 0;
+        }
+        
+        .activity-icon.stake { background: rgba(0, 255, 136, 0.1); }
+        .activity-icon.forge { background: rgba(0, 212, 255, 0.1); }
+        .activity-icon.battle { background: rgba(255, 107, 53, 0.1); }
+        .activity-icon.trade { background: rgba(255, 0, 110, 0.1); }
+        
+        .activity-content {
+            flex: 1;
+        }
+        
+        .activity-text {
+            font-size: 0.9em;
+            color: #fff;
+            margin-bottom: 3px;
+        }
+        
+        .activity-text strong {
+            color: var(--neon-blue);
+        }
+        
+        .activity-time {
+            font-size: 0.75em;
+            color: #666;
+        }
+        
+        .activity-value {
+            font-family: 'Orbitron', sans-serif;
+            color: var(--neon-green);
+            font-size: 0.9em;
+        }
+        
+        /* Token Distribution */
+        .distribution-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .dist-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .dist-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 2px;
+        }
+        
+        .dist-label {
+            flex: 1;
+            font-size: 0.85em;
+            color: #aaa;
+        }
+        
+        .dist-value {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.9em;
+            color: #fff;
+        }
+        
+        .dist-bar {
+            width: 100%;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            margin-top: 8px;
+            grid-column: 1 / -1;
+        }
+        
+        .dist-fill {
+            height: 100%;
+            transition: width 0.5s ease;
+        }
+        
+        /* Mech Rarity Distribution */
+        .rarity-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+        
+        .rarity-card {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .rarity-name {
+            font-size: 0.75em;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 8px;
+        }
+        
+        .rarity-count {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.4em;
+            font-weight: 700;
+        }
+        
+        .rarity-card.legendary { border-color: var(--neon-pink); }
+        .rarity-card.legendary .rarity-count { color: var(--neon-pink); }
+        .rarity-card.epic { border-color: var(--neon-purple); }
+        .rarity-card.epic .rarity-count { color: var(--neon-purple); }
+        .rarity-card.rare { border-color: var(--neon-blue); }
+        .rarity-card.rare .rarity-count { color: var(--neon-blue); }
+        .rarity-card.uncommon { border-color: var(--neon-green); }
+        .rarity-card.uncommon .rarity-count { color: var(--neon-green); }
+        
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .kpi-grid { grid-template-columns: repeat(3, 1fr); }
+            .dashboard-grid { grid-template-columns: 1fr; }
+            .secondary-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-grid"></div>
+    
+    <header class="header">
+        <div class="logo">MECHFORGE ANALYTICS</div>
+        <nav class="nav-links">
+            <a href="index.html">Home</a>
+            <a href="staking.html">Staking</a>
+            <a href="leaderboard.html">Leaderboard</a>
+            <a href="analytics.html" class="active">Analytics</a>
+        </nav>
+    </header>
+    
+    <div class="main-container">
+        <h1 class="page-title">PROTOCOL ANALYTICS</h1>
+        <p class="page-subtitle">Real-time metrics and on-chain data for MechForge</p>
+        
+        <!-- KPI Grid -->
+        <div class="kpi-grid">
+            <div class="kpi-card">
+                <div class="kpi-icon">💰</div>
+                <div class="kpi-value">$2.45M</div>
+                <div class="kpi-label">Total Value Locked</div>
+                <div class="kpi-change positive">↑ 12.5% (24h)</div>
+            </div>
+            
+            <div class="kpi-card">
+                <div class="kpi-icon">👥</div>
+                <div class="kpi-value">892</div>
+                <div class="kpi-label">Unique Stakers</div>
+                <div class="kpi-change positive">↑ 5.2% (24h)</div>
+            </div>
+            
+            <div class="kpi-card">
+                <div class="kpi-icon">🤖</div>
+                <div class="kpi-value">3,421</div>
+                <div class="kpi-label">Mechs Forged</div>
+                <div class="kpi-change positive">↑ 8.7% (24h)</div>
+            </div>
+            
+            <div class="kpi-card">
+                <div class="kpi-icon">📈</div>
+                <div class="kpi-value">18.5%</div>
+                <div class="kpi-label">Avg APY</div>
+                <div class="kpi-change positive">↑ 0.3% (24h)</div>
+            </div>
+            
+            <div class="kpi-card">
+                <div class="kpi-icon">⚔️</div>
+                <div class="kpi-value">12.5K</div>
+                <div class="kpi-label">Battles Fought</div>
+                <div class="kpi-change positive">↑ 15.3% (24h)</div>
+            </div>
+            
+            <div class="kpi-card">
+                <div class="kpi-icon">💸</div>
+                <div class="kpi-value">$45.2K</div>
+                <div class="kpi-label">Rewards Distributed</div>
+                <div class="kpi-change positive">↑ 22.1% (24h)</div>
+            </div>
+        </div>
+        
+        <!-- Dashboard Grid -->
+        <div class="dashboard-grid">
+            <!-- TVL Chart -->
+            <div class="panel">
+                <div class="panel-header">
+                    <span class="panel-title">TOTAL VALUE LOCKED</span>
+                    <div class="panel-actions">
+                        <button class="panel-btn active">7D</button>
+                        <button class="panel-btn">30D</button>
+                        <button class="panel-btn">90D</button>
+                    </div>
+                </div>
+                <div class="panel-content">
+                    <div class="chart-container">
+                        <canvas id="tvlChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Recent Activity -->
+            <div class="panel">
+                <div class="panel-header">
+                    <span class="panel-title">LIVE ACTIVITY</span>
+                </div>
+                <div class="panel-content">
+                    <div class="activity-list">
+                        <div class="activity-item">
+                            <div class="activity-icon stake">💰</div>
+                            <div class="activity-content">
+                                <div class="activity-text"><strong>0x7a23...4f91</strong> staked 500 DOT</div>
+                                <div class="activity-time">2 minutes ago</div>
+                            </div>
+                            <div class="activity-value">+500</div>
+                        </div>
+                        
+                        <div class="activity-item">
+                            <div class="activity-icon forge">🔨</div>
+                            <div class="activity-content">
+                                <div class="activity-text"><strong>0x9b12...8e32</strong> forged Omega Apocalypse</div>
+                                <div class="activity-time">5 minutes ago</div>
+                            </div>
+                            <div class="activity-value">LEGENDARY</div>
+                        </div>
+                        
+                        <div class="activity-item">
+                            <div class="activity-icon battle">⚔️</div>
+                            <div class="activity-content">
+                                <div class="activity-text"><strong>0x3c45...9a21</strong> completed wave 47</div>
+                                <div class="activity-time">8 minutes ago</div>
+                            </div>
+                            <div class="activity-value">+234 kills</div>
+                        </div>
+                        
+                        <div class="activity-item">
+                            <div class="activity-icon trade">🔄</div>
+                            <div class="activity-content">
+                                <div class="activity-text"><strong>0x8d67...2b44</strong> sold Dark Matter x3</div>
+                                <div class="activity-time">12 minutes ago</div>
+                            </div>
+                            <div class="activity-value">+125 DOT</div>
+                        </div>
+                        
+                        <div class="activity-item">
+                            <div class="activity-icon stake">💰</div>
+                            <div class="activity-content">
+                                <div class="activity-text"><strong>0x1f89...7c12</strong> compounded rewards</div>
+                                <div class="activity-time">15 minutes ago</div>
+                            </div>
+                            <div class="activity-value">+89 DOT</div>
+                        </div>
+                        
+                        <div class="activity-item">
+                            <div class="activity-icon forge">🔨</div>
+                            <div class="activity-content">
+                                <div class="activity-text"><strong>0x4e22...9d55</strong> forged Vanguard Colossus</div>
+                                <div class="activity-time">18 minutes ago</div>
+                            </div>
+                            <div class="activity-value">EPIC</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Secondary Grid -->
+        <div class="secondary-grid">
+            <!-- Materials Distribution -->
+            <div class="panel">
+                <div class="panel-header">
+                    <span class="panel-title">MATERIALS MINED</span>
+                </div>
+                <div class="panel-content">
+                    <div class="chart-container" style="height: 200px;">
+                        <canvas id="materialsChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Token Distribution -->
+            <div class="panel">
+                <div class="panel-header">
+                    <span class="panel-title">TOKEN DISTRIBUTION</span>
+                </div>
+                <div class="panel-content">
+                    <div class="distribution-list">
+                        <div class="dist-item">
+                            <div class="dist-color" style="background: var(--neon-blue);"></div>
+                            <span class="dist-label">Staking Rewards</span>
+                            <span class="dist-value">40%</span>
+                            <div class="dist-bar"><div class="dist-fill" style="width: 40%; background: var(--neon-blue);"></div></div>
+                        </div>
+                        
+                        <div class="dist-item">
+                            <div class="dist-color" style="background: var(--neon-purple);"></div>
+                            <span class="dist-label">Community Treasury</span>
+                            <span class="dist-value">25%</span>
+                            <div class="dist-bar"><div class="dist-fill" style="width: 25%; background: var(--neon-purple);"></div></div>
+                        </div>
+                        
+                        <div class="dist-item">
+                            <div class="dist-color" style="background: var(--neon-orange);"></div>
+                            <span class="dist-label">Team & Advisors</span>
+                            <span class="dist-value">20%</span>
+                            <div class="dist-bar"><div class="dist-fill" style="width: 20%; background: var(--neon-orange);"></div></div>
+                        </div>
+                        
+                        <div class="dist-item">
+                            <div class="dist-color" style="background: var(--neon-pink);"></div>
+                            <span class="dist-label">Liquidity & Listings</span>
+                            <span class="dist-value">15%</span>
+                            <div class="dist-bar"><div class="dist-fill" style="width: 15%; background: var(--neon-pink);"></div></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Mech Rarity -->
+            <div class="panel">
+                <div class="panel-header">
+                    <span class="panel-title">MECHS BY RARITY</span>
+                </div>
+                <div class="panel-content">
+                    <div class="rarity-grid">
+                        <div class="rarity-card legendary">
+                            <div class="rarity-name">Legendary</div>
+                            <div class="rarity-count">89</div>
+                        </div>
+                        
+                        <div class="rarity-card epic">
+                            <div class="rarity-name">Epic</div>
+                            <div class="rarity-count">456</div>
+                        </div>
+                        
+                        <div class="rarity-card rare">
+                            <div class="rarity-name">Rare</div>
+                            <div class="rarity-count">1,234</div>
+                        </div>
+                        
+                        <div class="rarity-card uncommon">
+                            <div class="rarity-name">Uncommon</div>
+                            <div class="rarity-count">1,642</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Initialize Charts
+        document.addEventListener('DOMContentLoaded', () => {
+            // TVL Chart
+            const tvlCtx = document.getElementById('tvlChart').getContext('2d');
+            new Chart(tvlCtx, {
+                type: 'line',
+                data: {
+                    labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                    datasets: [{
+                        label: 'TVL',
+                        data: [1.8, 1.95, 2.1, 2.05, 2.25, 2.35, 2.45],
+                        borderColor: '#00d4ff',
+                        backgroundColor: 'rgba(0, 212, 255, 0.1)',
+                        fill: true,
+                        tension: 0.4,
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        x: {
+                            grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                            ticks: { color: '#888', font: { family: 'Rajdhani' } }
+                        },
+                        y: {
+                            grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                            ticks: { 
+                                color: '#888', 
+                                font: { family: 'Rajdhani' },
+                                callback: (val) => '$' + val + 'M'
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // Materials Chart
+            const matCtx = document.getElementById('materialsChart').getContext('2d');
+            new Chart(matCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['Iron', 'Titanium', 'Plasma', 'Quantum', 'DarkMatter'],
+                    datasets: [{
+                        label: 'Mined (24h)',
+                        data: [45000, 18000, 5600, 1450, 89],
+                        backgroundColor: [
+                            '#888888',
+                            '#aaaaaa',
+                            '#00d4ff',
+                            '#7b2cbf',
+                            '#ff006e'
+                        ],
+                        borderRadius: 3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        x: {
+                            grid: { display: false },
+                            ticks: { color: '#888', font: { family: 'Rajdhani', size: 10 } }
+                        },
+                        y: {
+                            grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                            ticks: { color: '#888', font: { family: 'Rajdhani' } }
+                        }
+                    }
+                }
+            });
+            
+            // Button interactions
+            document.querySelectorAll('.panel-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    btn.parentElement.querySelectorAll('.panel-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                });
+            });
+        });
+    </script>
+</body>
+</html>

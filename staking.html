@@ -1,0 +1,891 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MECHFORGE — STAKING DASHBOARD</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        :root {
+            --neon-blue: #00d4ff;
+            --neon-purple: #7b2cbf;
+            --neon-orange: #ff6b35;
+            --neon-pink: #ff006e;
+            --neon-green: #00ff88;
+            --neon-yellow: #ffd700;
+            --dark-bg: #050510;
+            --panel-bg: rgba(5, 10, 20, 0.95);
+        }
+        
+        body {
+            font-family: 'Rajdhani', sans-serif;
+            background: var(--dark-bg);
+            color: #fff;
+            min-height: 100vh;
+        }
+        
+        /* Background Grid */
+        .bg-grid {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                linear-gradient(rgba(0, 212, 255, 0.02) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 212, 255, 0.02) 1px, transparent 1px);
+            background-size: 40px 40px;
+            pointer-events: none;
+            z-index: 0;
+        }
+        
+        /* Header */
+        .header {
+            position: relative;
+            z-index: 10;
+            padding: 25px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(0, 212, 255, 0.2);
+            background: linear-gradient(180deg, rgba(5, 10, 20, 0.98) 0%, transparent 100%);
+        }
+        
+        .logo {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.8em;
+            font-weight: 900;
+            background: linear-gradient(90deg, var(--neon-blue), var(--neon-purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .header-nav {
+            display: flex;
+            gap: 30px;
+        }
+        
+        .header-nav a {
+            color: #888;
+            text-decoration: none;
+            font-weight: 600;
+            letter-spacing: 0.1em;
+            transition: color 0.3s ease;
+            text-transform: uppercase;
+            font-size: 0.85em;
+        }
+        
+        .header-nav a:hover, .header-nav a.active {
+            color: var(--neon-blue);
+        }
+        
+        .wallet-btn {
+            background: linear-gradient(135deg, var(--neon-orange) 0%, var(--neon-pink) 100%);
+            border: none;
+            padding: 12px 25px;
+            color: #fff;
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 700;
+            font-size: 0.8em;
+            cursor: pointer;
+            clip-path: polygon(10% 0, 100% 0, 100% 70%, 90% 100%, 0 100%, 0 30%);
+            transition: all 0.3s ease;
+        }
+        
+        .wallet-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(255, 107, 53, 0.4);
+        }
+        
+        /* Main Layout */
+        .main-container {
+            position: relative;
+            z-index: 10;
+            padding: 30px 40px;
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+        
+        /* Dashboard Grid */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 320px 1fr 350px;
+            gap: 25px;
+        }
+        
+        /* Panel Base Styles */
+        .panel {
+            background: var(--panel-bg);
+            border: 1px solid rgba(0, 212, 255, 0.15);
+            clip-path: polygon(0 10px, 10px 0, calc(100% - 10px) 0, 100% 10px, 100% calc(100% - 10px), calc(100% - 10px) 100%, 10px 100%, 0 calc(100% - 10px));
+        }
+        
+        .panel-header {
+            padding: 20px;
+            border-bottom: 1px solid rgba(0, 212, 255, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .panel-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.9em;
+            color: var(--neon-blue);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .panel-title::before {
+            content: '◆';
+            color: var(--neon-orange);
+            font-size: 0.7em;
+        }
+        
+        /* Wallet Panel */
+        .wallet-panel {
+            padding: 25px;
+        }
+        
+        .balance-card {
+            background: linear-gradient(135deg, rgba(0, 212, 255, 0.1), rgba(123, 44, 191, 0.1));
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            padding: 25px;
+            margin-bottom: 20px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .balance-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--neon-blue), transparent);
+        }
+        
+        .balance-label {
+            color: #888;
+            font-size: 0.8em;
+            letter-spacing: 0.15em;
+            margin-bottom: 10px;
+        }
+        
+        .balance-value {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 2.2em;
+            font-weight: 900;
+            color: #fff;
+            text-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
+        }
+        
+        .balance-sub {
+            color: var(--neon-green);
+            font-size: 0.85em;
+            margin-top: 5px;
+        }
+        
+        .quick-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        
+        .action-btn {
+            background: rgba(0, 212, 255, 0.1);
+            border: 1px solid rgba(0, 212, 255, 0.2);
+            color: #fff;
+            padding: 15px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.75em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+        }
+        
+        .action-btn:hover {
+            background: rgba(0, 212, 255, 0.2);
+            border-color: var(--neon-blue);
+        }
+        
+        .action-btn.primary {
+            background: linear-gradient(135deg, var(--neon-orange), var(--neon-pink));
+            border: none;
+            grid-column: span 2;
+        }
+        
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+        
+        .stat-card {
+            background: var(--panel-bg);
+            border: 1px solid rgba(0, 212, 255, 0.15);
+            padding: 20px;
+            text-align: center;
+            clip-path: polygon(0 8px, 8px 0, calc(100% - 8px) 0, 100% 8px, 100% calc(100% - 8px), calc(100% - 8px) 100%, 8px 100%, 0 calc(100% - 8px));
+        }
+        
+        .stat-icon {
+            font-size: 1.5em;
+            margin-bottom: 8px;
+        }
+        
+        .stat-value {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.6em;
+            font-weight: 700;
+            color: #fff;
+        }
+        
+        .stat-value.positive { color: var(--neon-green); }
+        .stat-value.warning { color: var(--neon-orange); }
+        
+        .stat-label {
+            color: #666;
+            font-size: 0.75em;
+            letter-spacing: 0.1em;
+            margin-top: 5px;
+        }
+        
+        /* Staking Panel */
+        .staking-form {
+            padding: 25px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-label {
+            display: flex;
+            justify-content: space-between;
+            color: #888;
+            font-size: 0.8em;
+            margin-bottom: 10px;
+        }
+        
+        .form-input-wrapper {
+            display: flex;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(0, 212, 255, 0.2);
+            padding: 5px;
+        }
+        
+        .form-input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            padding: 10px 15px;
+            color: #fff;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.1em;
+        }
+        
+        .form-input:focus {
+            outline: none;
+        }
+        
+        .form-token {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 0 15px;
+            color: #888;
+            font-size: 0.9em;
+        }
+        
+        .max-btn {
+            background: rgba(0, 212, 255, 0.1);
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            color: var(--neon-blue);
+            padding: 5px 12px;
+            font-size: 0.7em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .max-btn:hover {
+            background: rgba(0, 212, 255, 0.2);
+        }
+        
+        /* APY Calculator */
+        .apy-calc {
+            background: rgba(0, 255, 136, 0.05);
+            border: 1px solid rgba(0, 255, 136, 0.2);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .apy-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .apy-label {
+            color: #888;
+            font-size: 0.85em;
+        }
+        
+        .apy-value {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.8em;
+            color: var(--neon-green);
+        }
+        
+        .apy-breakdown {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            font-size: 0.8em;
+            color: #666;
+        }
+        
+        .apy-breakdown-item {
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .apy-breakdown-item span:last-child {
+            color: #fff;
+        }
+        
+        /* Stake Button */
+        .stake-btn {
+            width: 100%;
+            background: linear-gradient(135deg, var(--neon-orange) 0%, var(--neon-pink) 100%);
+            border: none;
+            padding: 18px;
+            color: #fff;
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 900;
+            font-size: 1em;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            transition: all 0.3s ease;
+            clip-path: polygon(10% 0, 100% 0, 100% 70%, 90% 100%, 0 100%, 0 30%);
+        }
+        
+        .stake-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 40px rgba(255, 107, 53, 0.4);
+        }
+        
+        /* Positions List */
+        .positions-list {
+            padding: 0 25px 25px;
+        }
+        
+        .position-item {
+            display: grid;
+            grid-template-columns: 1fr auto auto;
+            gap: 20px;
+            align-items: center;
+            padding: 20px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        
+        .position-item:last-child {
+            border-bottom: none;
+        }
+        
+        .position-info h4 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.9em;
+            color: #fff;
+            margin-bottom: 5px;
+        }
+        
+        .position-info p {
+            color: #666;
+            font-size: 0.8em;
+        }
+        
+        .position-apr {
+            font-family: 'Orbitron', sans-serif;
+            color: var(--neon-green);
+            font-size: 1.1em;
+        }
+        
+        .position-actions {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .pos-btn {
+            background: rgba(0, 212, 255, 0.1);
+            border: 1px solid rgba(0, 212, 255, 0.2);
+            color: #fff;
+            padding: 8px 15px;
+            font-size: 0.7em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: 'Orbitron', sans-serif;
+        }
+        
+        .pos-btn:hover {
+            background: rgba(0, 212, 255, 0.2);
+            border-color: var(--neon-blue);
+        }
+        
+        /* Rewards Panel */
+        .rewards-chart {
+            padding: 25px;
+            height: 250px;
+        }
+        
+        .materials-list {
+            padding: 0 25px 25px;
+        }
+        
+        .material-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 15px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        
+        .material-item:last-child {
+            border-bottom: none;
+        }
+        
+        .material-icon {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.3em;
+        }
+        
+        .material-icon.iron { background: linear-gradient(135deg, #888, #aaa); }
+        .material-icon.titanium { background: linear-gradient(135deg, #aaa, #ddd); }
+        .material-icon.plasma { background: linear-gradient(135deg, var(--neon-blue), #0088ff); box-shadow: 0 0 15px rgba(0, 212, 255, 0.3); }
+        .material-icon.quantum { background: linear-gradient(135deg, var(--neon-purple), #4a0080); box-shadow: 0 0 15px rgba(123, 44, 191, 0.3); }
+        .material-icon.darkmatter { background: linear-gradient(135deg, var(--neon-pink), #800040); box-shadow: 0 0 15px rgba(255, 0, 110, 0.3); }
+        
+        .material-info {
+            flex: 1;
+        }
+        
+        .material-name {
+            color: #fff;
+            font-size: 0.9em;
+            margin-bottom: 3px;
+        }
+        
+        .material-rate {
+            color: #666;
+            font-size: 0.75em;
+        }
+        
+        .material-amount {
+            font-family: 'Orbitron', sans-serif;
+            color: #fff;
+            font-size: 1.1em;
+        }
+        
+        /* Chart Container */
+        .chart-container {
+            padding: 25px;
+            height: 300px;
+        }
+        
+        /* Time Selector */
+        .time-selector {
+            display: flex;
+            gap: 5px;
+        }
+        
+        .time-btn {
+            background: rgba(0, 212, 255, 0.1);
+            border: 1px solid rgba(0, 212, 255, 0.2);
+            color: #888;
+            padding: 5px 12px;
+            font-size: 0.7em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: 'Rajdhani', sans-serif;
+        }
+        
+        .time-btn:hover, .time-btn.active {
+            background: rgba(0, 212, 255, 0.2);
+            color: var(--neon-blue);
+            border-color: var(--neon-blue);
+        }
+        
+        /* Responsive */
+        @media (max-width: 1400px) {
+            .dashboard-grid {
+                grid-template-columns: 280px 1fr 300px;
+            }
+        }
+        
+        @media (max-width: 1200px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-grid"></div>
+    
+    <!-- Header -->
+    <header class="header">
+        <div class="logo">MECHFORGE</div>
+        <nav class="header-nav">
+            <a href="index.html">Home</a>
+            <a href="aaa-game.html">Battle</a>
+            <a href="codex.html">Codex</a>
+            <a href="staking.html" class="active">Staking</a>
+        </nav>
+        <button class="wallet-btn" id="walletBtn">🔗 CONNECT WALLET</button>
+    </header>
+    
+    <!-- Main Container -->
+    <div class="main-container">
+        <!-- Stats Overview -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon">💰</div>
+                <div class="stat-value">2,450</div>
+                <div class="stat-label">DOT STAKED</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">📈</div>
+                <div class="stat-value positive">18.5%</div>
+                <div class="stat-label">CURRENT APY</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">💎</div>
+                <div class="stat-value">$4,892</div>
+                <div class="stat-label">TOTAL VALUE</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">⛏️</div>
+                <div class="stat-value">156/hr</div>
+                <div class="stat-label">MINING RATE</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">🏆</div>
+                <div class="stat-value">#892</div>
+                <div class="stat-label">RANK</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">⚡</div>
+                <div class="stat-value warning">+5%</div>
+                <div class="stat-label">BOOST ACTIVE</div>
+            </div>
+        </div>
+        
+        <!-- Dashboard Grid -->
+        <div class="dashboard-grid">
+            <!-- Left Column: Wallet & Quick Actions -->
+            <div class="left-column">
+                <div class="panel">
+                    <div class="panel-header">
+                        <span class="panel-title">WALLET</span>
+                    </div>
+                    <div class="wallet-panel">
+                        <div class="balance-card">
+                            <div class="balance-label">STAKED BALANCE</div>
+                            <div class="balance-value">2,450 DOT</div>
+                            <div class="balance-sub">≈ $4,892 USD</div>
+                        </div>
+                        
+                        <div class="balance-card" style="background: linear-gradient(135deg, rgba(0, 255, 136, 0.1), rgba(0, 212, 255, 0.1)); border-color: var(--neon-green);">
+                            <div class="balance-label">EARNED REWARDS</div>
+                            <div class="balance-value" style="font-size: 1.8em;">89.4 DOT</div>
+                            <div class="balance-sub">+12.5% this month</div>
+                        </div>
+                        
+                        <div class="quick-actions">
+                            <button class="action-btn primary">Stake More</button>
+                            <button class="action-btn">Claim</button>
+                            <button class="action-btn">Unstake</button>
+                            <button class="action-btn">Compound</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="panel" style="margin-top: 20px;">
+                    <div class="panel-header">
+                        <span class="panel-title">ACTIVE POSITIONS</span>
+                    </div>
+                    <div class="positions-list">
+                        <div class="position-item">
+                            <div class="position-info">
+                                <h4>DOT Staking Pool</h4>
+                                <p>1,500 DOT • 45 days locked</p>
+                            </div>
+                            <div class="position-apr">16.2%</div>
+                            <div class="position-actions">
+                                <button class="pos-btn">+ Mech</button>
+                            </div>
+                        </div>
+                        <div class="position-item">
+                            <div class="position-info">
+                                <h4>DOT Staking Pool</h4>
+                                <p>950 DOT • Flexible</p>
+                            </div>
+                            <div class="position-apr">12.8%</div>
+                            <div class="position-actions">
+                                <button class="pos-btn">+ Mech</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Center Column: Staking Interface -->
+            <div class="center-column">
+                <div class="panel">
+                    <div class="panel-header">
+                        <span class="panel-title">STAKE DOT</span>
+                        <div class="time-selector">
+                            <button class="time-btn active">Flexible</button>
+                            <button class="time-btn">30 Days</button>
+                            <button class="time-btn">90 Days</button>
+                        </div>
+                    </div>
+                    
+                    <div class="staking-form">
+                        <div class="form-group">
+                            <div class="form-label">
+                                <span>Amount to Stake</span>
+                                <span>Balance: 3,250 DOT</span>
+                            </div>
+                            <div class="form-input-wrapper">
+                                <input type="text" class="form-input" placeholder="0.00" value="1000">
+                                <span class="form-token">DOT</span>
+                                <button class="max-btn">MAX</button>
+                            </div>
+                        </div>
+                        
+                        <div class="apy-calc">
+                            <div class="apy-header">
+                                <span class="apy-label">Estimated APY</span>
+                                <span class="apy-value">18.5%</span>
+                            </div>
+                            <div class="apy-breakdown">
+                                <div class="apy-breakdown-item">
+                                    <span>Base Staking APY</span>
+                                    <span>12.0%</span>
+                                </div>
+                                <div class="apy-breakdown-item">
+                                    <span>Omega Apocalypse Boost</span>
+                                    <span>+5.0%</span>
+                                </div>
+                                <div class="apy-breakdown-item">
+                                    <span>Time Lock Bonus</span>
+                                    <span>+1.5%</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <button class="stake-btn">⚡ CONFIRM STAKE</button>
+                    </div>
+                </div>
+                
+                <div class="panel" style="margin-top: 25px;">
+                    <div class="panel-header">
+                        <span class="panel-title">REWARDS HISTORY</span>
+                        <div class="time-selector">
+                            <button class="time-btn active">7D</button>
+                            <button class="time-btn">30D</button>
+                            <button class="time-btn">90D</button>
+                            <button class="time-btn">1Y</button>
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="rewardsChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Right Column: Materials & Mining -->
+            <div class="right-column">
+                <div class="panel">
+                    <div class="panel-header">
+                        <span class="panel-title">MINED MATERIALS</span>
+                    </div>
+                    <div class="rewards-chart">
+                        <canvas id="materialsChart"></canvas>
+                    </div>
+                </div>
+                
+                <div class="panel" style="margin-top: 20px;">
+                    <div class="panel-header">
+                        <span class="panel-title">MATERIAL INVENTORY</span>
+                    </div>
+                    <div class="materials-list">
+                        <div class="material-item">
+                            <div class="material-icon iron">🔩</div>
+                            <div class="material-info">
+                                <div class="material-name">Iron</div>
+                                <div class="material-rate">+45/hr</div>
+                            </div>
+                            <div class="material-amount">2,450</div>
+                        </div>
+                        
+                        <div class="material-item">
+                            <div class="material-icon titanium">⚙️</div>
+                            <div class="material-info">
+                                <div class="material-name">Titanium</div>
+                                <div class="material-rate">+18/hr</div>
+                            </div>
+                            <div class="material-amount">890</div>
+                        </div>
+                        
+                        <div class="material-item">
+                            <div class="material-icon plasma">🔥</div>
+                            <div class="material-info">
+                                <div class="material-name">Plasma Core</div>
+                                <div class="material-rate">+5/hr</div>
+                            </div>
+                            <div class="material-amount">156</div>
+                        </div>
+                        
+                        <div class="material-item">
+                            <div class="material-icon quantum">💎</div>
+                            <div class="material-info">
+                                <div class="material-name">Quantum Chip</div>
+                                <div class="material-rate">+1.2/hr</div>
+                            </div>
+                            <div class="material-amount">42</div>
+                        </div>
+                        
+                        <div class="material-item">
+                            <div class="material-icon darkmatter">🌌</div>
+                            <div class="material-info">
+                                <div class="material-name">Dark Matter</div>
+                                <div class="material-rate">+0.1/hr</div>
+                            </div>
+                            <div class="material-amount">5</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Initialize Charts
+        document.addEventListener('DOMContentLoaded', () => {
+            // Rewards History Chart
+            const rewardsCtx = document.getElementById('rewardsChart').getContext('2d');
+            new Chart(rewardsCtx, {
+                type: 'line',
+                data: {
+                    labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                    datasets: [{
+                        label: 'Rewards (DOT)',
+                        data: [12.5, 14.2, 13.8, 15.1, 16.2, 15.8, 17.3],
+                        borderColor: '#00ff88',
+                        backgroundColor: 'rgba(0, 255, 136, 0.1)',
+                        fill: true,
+                        tension: 0.4,
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        x: {
+                            grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                            ticks: { color: '#888', font: { family: 'Rajdhani' } }
+                        },
+                        y: {
+                            grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                            ticks: { color: '#888', font: { family: 'Rajdhani' } }
+                        }
+                    }
+                }
+            });
+            
+            // Materials Distribution Chart
+            const materialsCtx = document.getElementById('materialsChart').getContext('2d');
+            new Chart(materialsCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Iron', 'Titanium', 'Plasma', 'Quantum', 'Dark Matter'],
+                    datasets: [{
+                        data: [2450, 890, 156, 42, 5],
+                        backgroundColor: [
+                            '#888888',
+                            '#aaaaaa',
+                            '#00d4ff',
+                            '#7b2cbf',
+                            '#ff006e'
+                        ],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                            labels: {
+                                color: '#888',
+                                font: { family: 'Rajdhani', size: 11 },
+                                boxWidth: 12,
+                                padding: 10
+                            }
+                        }
+                    },
+                    cutout: '60%'
+                }
+            });
+            
+            // Wallet Connect
+            document.getElementById('walletBtn').addEventListener('click', async () => {
+                if (typeof window.ethereum !== 'undefined') {
+                    try {
+                        await window.ethereum.request({ method: 'eth_requestAccounts' });
+                        document.getElementById('walletBtn').textContent = '✓ CONNECTED';
+                    } catch (error) {
+                        console.error('Connection failed:', error);
+                    }
+                } else {
+                    alert('Please install MetaMask!');
+                }
+            });
+            
+            // Time period selector
+            document.querySelectorAll('.time-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    btn.parentElement.querySelectorAll('.time-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                });
+            });
+        });
+    </script>
+</body>
+</html>

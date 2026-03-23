@@ -1,0 +1,1047 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MECHFORGE — BATTLE HISTORY</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        :root {
+            --neon-blue: #00d4ff;
+            --neon-purple: #7b2cbf;
+            --neon-orange: #ff6b35;
+            --neon-pink: #ff006e;
+            --neon-green: #00ff88;
+            --neon-red: #ff2a2a;
+            --dark-bg: #050510;
+            --panel-bg: rgba(5, 10, 20, 0.95);
+        }
+        
+        body {
+            font-family: 'Rajdhani', sans-serif;
+            background: var(--dark-bg);
+            color: #fff;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        
+        /* Scanline Effect */
+        .scanlines {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(
+                to bottom,
+                rgba(255,255,255,0.02) 0%,
+                transparent 50%,
+                rgba(255,255,255,0.02) 100%
+            );
+            background-size: 100% 4px;
+            pointer-events: none;
+            z-index: 1000;
+            opacity: 0.3;
+        }
+        
+        /* Header */
+        .header {
+            position: relative;
+            z-index: 10;
+            padding: 30px 60px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(0, 212, 255, 0.2);
+            background: linear-gradient(180deg, rgba(5, 10, 20, 0.98) 0%, transparent 100%);
+        }
+        
+        .logo {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 2em;
+            font-weight: 900;
+            background: linear-gradient(90deg, var(--neon-blue), var(--neon-purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 30px rgba(0, 212, 255, 0.3);
+        }
+        
+        .nav-links {
+            display: flex;
+            gap: 30px;
+        }
+        
+        .nav-link {
+            color: #888;
+            text-decoration: none;
+            font-weight: 600;
+            letter-spacing: 0.1em;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            font-size: 0.9em;
+        }
+        
+        .nav-link:hover, .nav-link.active {
+            color: var(--neon-blue);
+            text-shadow: 0 0 20px rgba(0, 212, 255, 0.5);
+        }
+        
+        .connect-btn {
+            background: linear-gradient(135deg, var(--neon-orange) 0%, var(--neon-pink) 100%);
+            border: none;
+            padding: 12px 30px;
+            color: #fff;
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 700;
+            cursor: pointer;
+            clip-path: polygon(10% 0, 100% 0, 100% 70%, 90% 100%, 0 100%, 0 30%);
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+        
+        .connect-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 40px rgba(255, 107, 53, 0.4);
+        }
+        
+        /* Main Content */
+        .main-content {
+            position: relative;
+            z-index: 10;
+            padding: 40px 60px;
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+        
+        .page-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 3em;
+            font-weight: 900;
+            text-align: center;
+            margin-bottom: 10px;
+            background: linear-gradient(90deg, var(--neon-orange), var(--neon-red));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .page-subtitle {
+            text-align: center;
+            color: #888;
+            margin-bottom: 40px;
+            letter-spacing: 0.2em;
+            font-size: 1.1em;
+        }
+        
+        /* Stats Overview */
+        .stats-overview {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+        
+        .overview-card {
+            background: var(--panel-bg);
+            border: 1px solid rgba(0, 212, 255, 0.2);
+            padding: 25px;
+            text-align: center;
+            clip-path: polygon(0 10px, 10px 0, calc(100% - 10px) 0, 100% 10px, 100% calc(100% - 10px), calc(100% - 10px) 100%, 10px 100%, 0 calc(100% - 10px));
+            transition: all 0.3s ease;
+        }
+        
+        .overview-card:hover {
+            border-color: var(--neon-blue);
+            transform: translateY(-3px);
+        }
+        
+        .overview-icon {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+        
+        .overview-value {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 2.2em;
+            font-weight: 900;
+            color: var(--neon-blue);
+            text-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
+        }
+        
+        .overview-card.wins .overview-value { color: var(--neon-green); }
+        .overview-card.losses .overview-value { color: var(--neon-red); }
+        .overview-card.kills .overview-value { color: var(--neon-orange); }
+        
+        .overview-label {
+            color: #888;
+            font-size: 0.85em;
+            letter-spacing: 0.15em;
+            margin-top: 5px;
+        }
+        
+        /* Battle History Container */
+        .battle-container {
+            display: grid;
+            grid-template-columns: 1fr 400px;
+            gap: 30px;
+        }
+        
+        /* Battle List */
+        .battle-list-section {
+            background: var(--panel-bg);
+            border: 1px solid rgba(0, 212, 255, 0.2);
+            clip-path: polygon(0 15px, 15px 0, calc(100% - 15px) 0, 100% 15px, 100% calc(100% - 15px), calc(100% - 15px) 100%, 15px 100%, 0 calc(100% - 15px));
+        }
+        
+        .section-header {
+            padding: 25px 30px;
+            border-bottom: 1px solid rgba(0, 212, 255, 0.2);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .section-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.2em;
+            color: var(--neon-blue);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .section-title::before {
+            content: '◆';
+            color: var(--neon-orange);
+        }
+        
+        .filter-dropdown {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            color: #fff;
+            padding: 8px 15px;
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 0.85em;
+            cursor: pointer;
+        }
+        
+        .battle-list {
+            max-height: 600px;
+            overflow-y: auto;
+        }
+        
+        .battle-item {
+            display: grid;
+            grid-template-columns: 80px 1fr 100px 120px;
+            align-items: center;
+            padding: 20px 25px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .battle-item:hover, .battle-item.active {
+            background: rgba(0, 212, 255, 0.05);
+        }
+        
+        .battle-item.active {
+            border-left: 3px solid var(--neon-blue);
+        }
+        
+        .battle-outcome {
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 900;
+            font-size: 0.85em;
+            padding: 8px 12px;
+            text-align: center;
+            clip-path: polygon(15% 0, 100% 0, 100% 70%, 85% 100%, 0 100%, 0 30%);
+        }
+        
+        .battle-outcome.victory {
+            background: rgba(0, 255, 136, 0.2);
+            color: var(--neon-green);
+            border: 1px solid var(--neon-green);
+        }
+        
+        .battle-outcome.defeat {
+            background: rgba(255, 42, 42, 0.2);
+            color: var(--neon-red);
+            border: 1px solid var(--neon-red);
+        }
+        
+        .battle-info h4 {
+            font-family: 'Orbitron', sans-serif;
+            color: #fff;
+            font-size: 0.95em;
+            margin-bottom: 5px;
+        }
+        
+        .battle-meta {
+            display: flex;
+            gap: 15px;
+            font-size: 0.8em;
+            color: #666;
+        }
+        
+        .battle-meta span {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .battle-wave {
+            text-align: center;
+            font-family: 'Orbitron', sans-serif;
+        }
+        
+        .wave-number {
+            font-size: 1.5em;
+            font-weight: 900;
+            color: var(--neon-orange);
+        }
+        
+        .wave-label {
+            font-size: 0.7em;
+            color: #666;
+        }
+        
+        .battle-date {
+            text-align: right;
+            color: #888;
+            font-size: 0.85em;
+        }
+        
+        /* Battle Detail Panel */
+        .battle-detail {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        .detail-panel {
+            background: var(--panel-bg);
+            border: 1px solid rgba(0, 212, 255, 0.2);
+            clip-path: polygon(0 10px, 10px 0, calc(100% - 10px) 0, 100% 10px, 100% calc(100% - 10px), calc(100% - 10px) 100%, 10px 100%, 0 calc(100% - 10px));
+        }
+        
+        .detail-header {
+            padding: 20px 25px;
+            border-bottom: 1px solid rgba(0, 212, 255, 0.2);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .detail-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1em;
+            color: var(--neon-blue);
+        }
+        
+        .replay-btn {
+            background: rgba(0, 212, 255, 0.1);
+            border: 1px solid var(--neon-blue);
+            color: var(--neon-blue);
+            padding: 8px 20px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.75em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .replay-btn:hover {
+            background: var(--neon-blue);
+            color: #000;
+        }
+        
+        /* Battle Visualization */
+        .battle-viz {
+            padding: 25px;
+            min-height: 250px;
+        }
+        
+        .viz-title {
+            text-align: center;
+            color: #888;
+            font-size: 0.85em;
+            letter-spacing: 0.2em;
+            margin-bottom: 20px;
+        }
+        
+        .timeline {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .timeline-event {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 12px 15px;
+            background: rgba(0, 0, 0, 0.3);
+            border-left: 3px solid var(--neon-blue);
+            transition: all 0.3s ease;
+        }
+        
+        .timeline-event.kill { border-left-color: var(--neon-green); }
+        .timeline-event.damage { border-left-color: var(--neon-orange); }
+        .timeline-event.wave { border-left-color: var(--neon-purple); }
+        .timeline-event.boss { border-left-color: var(--neon-pink); }
+        
+        .timeline-time {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.8em;
+            color: #666;
+            min-width: 50px;
+        }
+        
+        .timeline-icon {
+            font-size: 1.2em;
+        }
+        
+        .timeline-text {
+            flex: 1;
+            font-size: 0.9em;
+        }
+        
+        .timeline-text strong {
+            color: var(--neon-blue);
+        }
+        
+        /* Performance Stats */
+        .performance-stats {
+            padding: 25px;
+        }
+        
+        .perf-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+        }
+        
+        .perf-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 15px;
+            background: rgba(0, 0, 0, 0.3);
+        }
+        
+        .perf-label {
+            color: #888;
+            font-size: 0.85em;
+        }
+        
+        .perf-value {
+            font-family: 'Orbitron', sans-serif;
+            color: #fff;
+            font-weight: 700;
+        }
+        
+        .perf-value.highlight {
+            color: var(--neon-orange);
+        }
+        
+        /* Rewards Panel */
+        .rewards-panel {
+            padding: 25px;
+        }
+        
+        .rewards-title {
+            color: #888;
+            font-size: 0.85em;
+            letter-spacing: 0.1em;
+            margin-bottom: 15px;
+        }
+        
+        .reward-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        
+        .reward-item:last-child {
+            border-bottom: none;
+        }
+        
+        .reward-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2em;
+        }
+        
+        .reward-icon.xp { background: rgba(0, 212, 255, 0.2); }
+        .reward-icon.material { background: rgba(255, 107, 53, 0.2); }
+        .reward-icon.token { background: rgba(255, 215, 0, 0.2); }
+        
+        .reward-info {
+            flex: 1;
+        }
+        
+        .reward-name {
+            color: #fff;
+            font-size: 0.9em;
+        }
+        
+        .reward-desc {
+            color: #666;
+            font-size: 0.75em;
+        }
+        
+        .reward-amount {
+            font-family: 'Orbitron', sans-serif;
+            color: var(--neon-green);
+            font-weight: 700;
+        }
+        
+        /* Rank Progression */
+        .rank-section {
+            margin-top: 40px;
+            background: var(--panel-bg);
+            border: 1px solid rgba(0, 212, 255, 0.2);
+            padding: 30px;
+            clip-path: polygon(0 15px, 15px 0, calc(100% - 15px) 0, 100% 15px, 100% calc(100% - 15px), calc(100% - 15px) 100%, 15px 100%, 0 calc(100% - 15px));
+        }
+        
+        .rank-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+        
+        .rank-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.3em;
+            color: var(--neon-blue);
+        }
+        
+        .current-rank {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .rank-badge {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, var(--neon-orange), var(--neon-pink));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5em;
+            box-shadow: 0 0 30px rgba(255, 107, 53, 0.4);
+        }
+        
+        .rank-info h4 {
+            font-family: 'Orbitron', sans-serif;
+            color: #fff;
+            font-size: 1.1em;
+        }
+        
+        .rank-info p {
+            color: #888;
+            font-size: 0.85em;
+        }
+        
+        .rank-progress {
+            margin-bottom: 20px;
+        }
+        
+        .progress-bar {
+            height: 12px;
+            background: rgba(255, 255, 255, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--neon-blue), var(--neon-purple));
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
+            transition: width 0.5s ease;
+        }
+        
+        .progress-text {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 8px;
+            font-size: 0.8em;
+            color: #888;
+        }
+        
+        .rank-rewards {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+        }
+        
+        .next-rank-reward {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px;
+            text-align: center;
+            border: 1px solid rgba(0, 212, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+        
+        .next-rank-reward:hover {
+            border-color: var(--neon-blue);
+            transform: translateY(-3px);
+        }
+        
+        .next-rank-reward .reward-icon {
+            margin: 0 auto 10px;
+        }
+        
+        .next-rank-reward h5 {
+            color: #fff;
+            font-size: 0.85em;
+            margin-bottom: 5px;
+        }
+        
+        .next-rank-reward p {
+            color: var(--neon-blue);
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.8em;
+        }
+        
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.3);
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: rgba(0, 212, 255, 0.3);
+            border-radius: 3px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(0, 212, 255, 0.5);
+        }
+        
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .battle-container {
+                grid-template-columns: 1fr;
+            }
+            
+            .stats-overview {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="scanlines"></div>
+    
+    <!-- Header -->
+    <header class="header">
+        <div class="logo">MECHFORGE</div>
+        <nav class="nav-links">
+            <a href="index.html" class="nav-link">Home</a>
+            <a href="aaa-game.html" class="nav-link">Battle</a>
+            <a href="codex.html" class="nav-link">Codex</a>
+            <a href="history.html" class="nav-link active">History</a>
+        </nav>
+        <button class="connect-btn" id="connectBtn">Connect Wallet</button>
+    </header>
+    
+    <!-- Main Content -->
+    <main class="main-content">
+        <h1 class="page-title">BATTLE HISTORY</h1>
+        <p class="page-subtitle">REVIEW YOUR COMBAT PERFORMANCE & EARNINGS</p>
+        
+        <!-- Stats Overview -->
+        <div class="stats-overview">
+            <div class="overview-card wins">
+                <div class="overview-icon">🏆</div>
+                <div class="overview-value" id="totalWins">247</div>
+                <div class="overview-label">VICTORIES</div>
+            </div>
+            <div class="overview-card losses">
+                <div class="overview-icon">💀</div>
+                <div class="overview-value" id="totalLosses">23</div>
+                <div class="overview-label">DEFEATS</div>
+            </div>
+            <div class="overview-card kills">
+                <div class="overview-icon">⚔️</div>
+                <div class="overview-value" id="totalKills">8,942</div>
+                <div class="overview-label">ENEMIES DESTROYED</div>
+            </div>
+            <div class="overview-card">
+                <div class="overview-icon">⏱️</div>
+                <div class="overview-value" id="totalTime">64h</div>
+                <div class="overview-label">COMBAT TIME</div>
+            </div>
+        </div>
+        
+        <!-- Battle Container -->
+        <div class="battle-container">
+            <!-- Battle List -->
+            <div class="battle-list-section">
+                <div class="section-header">
+                    <h2 class="section-title">RECENT BATTLES</h2>
+                    <select class="filter-dropdown" id="battleFilter">
+                        <option value="all">All Battles</option>
+                        <option value="victory">Victories Only</option>
+                        <option value="defeat">Defeats Only</option>
+                    </select>
+                </div>
+                <div class="battle-list" id="battleList">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+            
+            <!-- Battle Detail -->
+            <div class="battle-detail" id="battleDetail">
+                <!-- Populated by JS -->
+            </div>
+        </div>
+        
+        <!-- Rank Progression -->
+        <div class="rank-section">
+            <div class="rank-header">
+                <h3 class="rank-title">RANK PROGRESSION</h3>
+                <div class="current-rank">
+                    <div class="rank-badge">⚡</div>
+                    <div class="rank-info">
+                        <h4>ELITE COMMANDER</h4>
+                        <p>Top 5% of all pilots</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="rank-progress">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="rankProgress" style="width: 78%"></div>
+                </div>
+                <div class="progress-text">
+                    <span>7,840 / 10,000 XP</span>
+                    <span>Next: LEGENDARY</span>
+                </div>
+            </div>
+            
+            <div class="rank-rewards">
+                <div class="next-rank-reward">
+                    <div class="reward-icon xp">📈</div>
+                    <h5>APY Boost</h5>
+                    <p>+5%</p>
+                </div>
+                <div class="next-rank-reward">
+                    <div class="reward-icon material">💎</div>
+                    <h5>Daily Materials</h5>
+                    <p>+25%</p>
+                </div>
+                <div class="next-rank-reward">
+                    <div class="reward-icon token">🎁</div>
+                    <h5>Legendary Drop</h5>
+                    <p>Guaranteed</p>
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    <script>
+        // Sample Battle Data
+        const battlesData = [
+            {
+                id: 1,
+                outcome: "victory",
+                mission: "Base Defense Alpha",
+                wave: 47,
+                duration: "12:34",
+                mech: "Omega Apocalypse",
+                date: "2 hours ago",
+                kills: 234,
+                damage: "1.2M",
+                accuracy: "87%",
+                events: [
+                    { time: "0:00", type: "start", icon: "🚀", text: "Mission started" },
+                    { time: "2:15", type: "wave", icon: "🌊", text: "Wave 10 completed" },
+                    { time: "4:30", type: "boss", icon: "👹", text: "Boss <strong>Titan Destroyer</strong> appeared" },
+                    { time: "5:45", type: "kill", icon: "💀", text: "Boss <strong>Titan Destroyer</strong> defeated" },
+                    { time: "8:20", type: "damage", icon: "💥", text: "Base took heavy damage" },
+                    { time: "12:34", type: "victory", icon: "🏆", text: "Mission accomplished" }
+                ],
+                rewards: [
+                    { icon: "⭐", type: "xp", name: "Combat XP", desc: "Base + Performance", amount: "+450" },
+                    { icon: "🔩", type: "material", name: "Iron", desc: "Salvaged materials", amount: "+125" },
+                    { icon: "💎", type: "material", name: "Quantum Chip", desc: "Rare drop", amount: "+3" }
+                ]
+            },
+            {
+                id: 2,
+                outcome: "victory",
+                mission: "Raid on Outpost 7",
+                wave: 38,
+                duration: "9:45",
+                mech: "Striker Titan",
+                date: "5 hours ago",
+                kills: 189,
+                damage: "890K",
+                accuracy: "82%",
+                events: [
+                    { time: "0:00", type: "start", icon: "🚀", text: "Mission started" },
+                    { time: "5:30", type: "kill", icon: "💀", text: "Elite <strong>Cyber Knight</strong> defeated" },
+                    { time: "9:45", type: "victory", icon: "🏆", text: "Mission accomplished" }
+                ],
+                rewards: [
+                    { icon: "⭐", type: "xp", name: "Combat XP", desc: "Base + Performance", amount: "+320" },
+                    { icon: "🔩", type: "material", name: "Iron", desc: "Salvaged materials", amount: "+85" },
+                    { icon: "🔥", type: "material", name: "Plasma Core", desc: "Rare drop", amount: "+2" }
+                ]
+            },
+            {
+                id: 3,
+                outcome: "defeat",
+                mission: "Siege of Sector 9",
+                wave: 52,
+                duration: "18:22",
+                mech: "Vanguard Colossus",
+                date: "Yesterday",
+                kills: 312,
+                damage: "1.8M",
+                accuracy: "79%",
+                events: [
+                    { time: "0:00", type: "start", icon: "🚀", text: "Mission started" },
+                    { time: "10:00", type: "wave", icon: "🌊", text: "Wave 25 completed - New record!" },
+                    { time: "15:30", type: "boss", icon: "👹", text: "Omega <strong>Apocalypse Dragon</strong> appeared" },
+                    { time: "18:22", type: "defeat", icon: "💀", text: "Base destroyed" }
+                ],
+                rewards: [
+                    { icon: "⭐", type: "xp", name: "Combat XP", desc: "Partial credit", amount: "+280" },
+                    { icon: "🔩", type: "material", name: "Titanium", desc: "Salvaged materials", amount: "+45" }
+                ]
+            },
+            {
+                id: 4,
+                outcome: "victory",
+                mission: "Deep Space Defense",
+                wave: 41,
+                duration: "11:18",
+                mech: "Scout Raptor",
+                date: "Yesterday",
+                kills: 167,
+                damage: "756K",
+                accuracy: "91%",
+                events: [
+                    { time: "0:00", type: "start", icon: "🚀", text: "Mission started" },
+                    { time: "11:18", type: "victory", icon: "🏆", text: "Perfect run completed" }
+                ],
+                rewards: [
+                    { icon: "⭐", type: "xp", name: "Combat XP", desc: "Base + Perfect bonus", amount: "+520" },
+                    { icon: "🔩", type: "material", name: "Iron", desc: "Salvaged materials", amount: "+95" }
+                ]
+            },
+            {
+                id: 5,
+                outcome: "victory",
+                mission: "Canyon Ambush",
+                wave: 35,
+                duration: "8:52",
+                mech: "Omega Apocalypse",
+                date: "2 days ago",
+                kills: 198,
+                damage: "1.1M",
+                accuracy: "85%",
+                events: [
+                    { time: "0:00", type: "start", icon: "🚀", text: "Mission started" },
+                    { time: "8:52", type: "victory", icon: "🏆", text: "Mission accomplished" }
+                ],
+                rewards: [
+                    { icon: "⭐", type: "xp", name: "Combat XP", desc: "Base + Performance", amount: "+380" },
+                    { icon: "🔩", type: "material", name: "Iron", desc: "Salvaged materials", amount: "+110" },
+                    { icon: "🌌", type: "material", name: "Dark Matter", desc: "LEGENDARY DROP!", amount: "+1" }
+                ]
+            }
+        ];
+        
+        let selectedBattle = battlesData[0];
+        
+        // Initialize
+        function init() {
+            renderBattleList();
+            renderBattleDetail(selectedBattle);
+            
+            // Connect button
+            document.getElementById('connectBtn').addEventListener('click', async () => {
+                if (typeof window.ethereum !== 'undefined') {
+                    try {
+                        await window.ethereum.request({ method: 'eth_requestAccounts' });
+                        document.getElementById('connectBtn').textContent = 'CONNECTED';
+                    } catch (error) {
+                        console.error('Connection failed:', error);
+                    }
+                } else {
+                    alert('Please install MetaMask!');
+                }
+            });
+            
+            // Filter
+            document.getElementById('battleFilter').addEventListener('change', (e) => {
+                renderBattleList(e.target.value);
+            });
+            
+            // Animate counters
+            animateValue('totalWins', 0, 247, 2000, '');
+            animateValue('totalLosses', 0, 23, 2000, '');
+            animateValue('totalKills', 0, 8942, 2000, ',');
+        }
+        
+        // Render Battle List
+        function renderBattleList(filter = 'all') {
+            const list = document.getElementById('battleList');
+            list.innerHTML = '';
+            
+            const filtered = filter === 'all' 
+                ? battlesData 
+                : battlesData.filter(b => b.outcome === filter);
+            
+            filtered.forEach(battle => {
+                const item = document.createElement('div');
+                item.className = `battle-item ${battle.id === selectedBattle.id ? 'active' : ''}`;
+                item.innerHTML = `
+                    <div class="battle-outcome ${battle.outcome}">${battle.outcome.toUpperCase()}</div>
+                    <div class="battle-info">
+                        <h4>${battle.mission}</h4>
+                        <div class="battle-meta">
+                            <span>🤖 ${battle.mech}</span>
+                            <span>⏱️ ${battle.duration}</span>
+                            <span>💀 ${battle.kills} kills</span>
+                        </div>
+                    </div>
+                    <div class="battle-wave">
+                        <div class="wave-number">${battle.wave}</div>
+                        <div class="wave-label">WAVES</div>
+                    </div>
+                    <div class="battle-date">${battle.date}</div>
+                `;
+                
+                item.addEventListener('click', () => {
+                    selectedBattle = battle;
+                    document.querySelectorAll('.battle-item').forEach(i => i.classList.remove('active'));
+                    item.classList.add('active');
+                    renderBattleDetail(battle);
+                });
+                
+                list.appendChild(item);
+            });
+        }
+        
+        // Render Battle Detail
+        function renderBattleDetail(battle) {
+            const detail = document.getElementById('battleDetail');
+            
+            const eventsHtml = battle.events.map(event => `
+                <div class="timeline-event ${event.type}">
+                    <span class="timeline-time">${event.time}</span>
+                    <span class="timeline-icon">${event.icon}</span>
+                    <span class="timeline-text">${event.text}</span>
+                </div>
+            `).join('');
+            
+            const rewardsHtml = battle.rewards.map(reward => `
+                <div class="reward-item">
+                    <div class="reward-icon ${reward.type}">${reward.icon}</div>
+                    <div class="reward-info">
+                        <div class="reward-name">${reward.name}</div>
+                        <div class="reward-desc">${reward.desc}</div>
+                    </div>
+                    <div class="reward-amount">${reward.amount}</div>
+                </div>
+            `).join('');
+            
+            detail.innerHTML = `
+                <div class="detail-panel">
+                    <div class="detail-header">
+                        <span class="detail-title">BATTLE TIMELINE</span>
+                        <button class="replay-btn" onclick="alert('Replay feature: Would playback 3D battle recording')">
+                            ▶ REPLAY
+                        </button>
+                    </div>
+                    <div class="battle-viz">
+                        <div class="viz-title">MISSION LOG</div>
+                        <div class="timeline">
+                            ${eventsHtml}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="detail-panel">
+                    <div class="detail-header">
+                        <span class="detail-title">PERFORMANCE</span>
+                    </div>
+                    <div class="performance-stats">
+                        <div class="perf-grid">
+                            <div class="perf-item">
+                                <span class="perf-label">Enemies Eliminated</span>
+                                <span class="perf-value highlight">${battle.kills}</span>
+                            </div>
+                            <div class="perf-item">
+                                <span class="perf-label">Total Damage</span>
+                                <span class="perf-value">${battle.damage}</span>
+                            </div>
+                            <div class="perf-item">
+                                <span class="perf-label">Accuracy</span>
+                                <span class="perf-value">${battle.accuracy}</span>
+                            </div>
+                            <div class="perf-item">
+                                <span class="perf-label">Mission Time</span>
+                                <span class="perf-value">${battle.duration}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="detail-panel">
+                    <div class="detail-header">
+                        <span class="detail-title">REWARDS</span>
+                    </div>
+                    <div class="rewards-panel">
+                        ${rewardsHtml}
+                    </div>
+                </div>
+            `;
+        }
+        
+        // Animate value
+        function animateValue(id, start, end, duration, separator) {
+            const obj = document.getElementById(id);
+            const range = end - start;
+            const increment = range / 50;
+            let current = start;
+            
+            const timer = setInterval(() => {
+                current += increment;
+                if ((increment > 0 && current >= end) || (increment < 0 && current <= end)) {
+                    current = end;
+                    clearInterval(timer);
+                }
+                obj.textContent = separator === ',' 
+                    ? Math.floor(current).toLocaleString()
+                    : Math.floor(current) + separator;
+            }, duration / 50);
+        }
+        
+        // Start
+        init();
+    </script>
+</body>
+</html>

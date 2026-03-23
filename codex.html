@@ -1,0 +1,1204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MECHFORGE — MECH CODEX</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        :root {
+            --neon-blue: #00d4ff;
+            --neon-purple: #7b2cbf;
+            --neon-orange: #ff6b35;
+            --neon-pink: #ff006e;
+            --neon-green: #00ff88;
+            --neon-yellow: #ffd700;
+            --dark-bg: #050510;
+            --panel-bg: rgba(5, 10, 20, 0.95);
+        }
+        
+        body {
+            font-family: 'Rajdhani', sans-serif;
+            background: var(--dark-bg);
+            color: #fff;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        
+        /* Animated Background */
+        .bg-particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+            opacity: 0.3;
+        }
+        
+        .particle {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: var(--neon-blue);
+            border-radius: 50%;
+            animation: float 10s infinite linear;
+        }
+        
+        @keyframes float {
+            from { transform: translateY(100vh) rotate(0deg); opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            to { transform: translateY(-100vh) rotate(720deg); opacity: 0; }
+        }
+        
+        /* Header */
+        .header {
+            position: relative;
+            z-index: 10;
+            padding: 30px 60px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(0, 212, 255, 0.2);
+            background: linear-gradient(180deg, rgba(5, 10, 20, 0.98) 0%, transparent 100%);
+        }
+        
+        .logo {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 2em;
+            font-weight: 900;
+            background: linear-gradient(90deg, var(--neon-blue), var(--neon-purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 30px rgba(0, 212, 255, 0.3);
+        }
+        
+        .nav-links {
+            display: flex;
+            gap: 30px;
+        }
+        
+        .nav-link {
+            color: #888;
+            text-decoration: none;
+            font-weight: 600;
+            letter-spacing: 0.1em;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            font-size: 0.9em;
+        }
+        
+        .nav-link:hover, .nav-link.active {
+            color: var(--neon-blue);
+            text-shadow: 0 0 20px rgba(0, 212, 255, 0.5);
+        }
+        
+        .connect-btn {
+            background: linear-gradient(135deg, var(--neon-orange) 0%, var(--neon-pink) 100%);
+            border: none;
+            padding: 12px 30px;
+            color: #fff;
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 700;
+            cursor: pointer;
+            clip-path: polygon(10% 0, 100% 0, 100% 70%, 90% 100%, 0 100%, 0 30%);
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+        
+        .connect-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 40px rgba(255, 107, 53, 0.4);
+        }
+        
+        /* Main Content */
+        .main-content {
+            position: relative;
+            z-index: 10;
+            padding: 40px 60px;
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+        
+        .page-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 3em;
+            font-weight: 900;
+            text-align: center;
+            margin-bottom: 10px;
+            background: linear-gradient(90deg, #fff, var(--neon-orange));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .page-subtitle {
+            text-align: center;
+            color: #888;
+            margin-bottom: 40px;
+            letter-spacing: 0.2em;
+            font-size: 1.1em;
+        }
+        
+        /* Mech Selection Grid */
+        .mech-selector {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+        
+        .mech-card {
+            background: var(--panel-bg);
+            border: 2px solid rgba(0, 212, 255, 0.2);
+            padding: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            clip-path: polygon(0 10px, 10px 0, calc(100% - 10px) 0, 100% 10px, 100% calc(100% - 10px), calc(100% - 10px) 100%, 10px 100%, 0 calc(100% - 10px));
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .mech-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, var(--neon-blue), transparent);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .mech-card:hover::before, .mech-card.active::before {
+            opacity: 1;
+        }
+        
+        .mech-card:hover, .mech-card.active {
+            border-color: var(--neon-blue);
+            transform: translateY(-5px);
+            box-shadow: 0 20px 60px rgba(0, 212, 255, 0.2);
+        }
+        
+        .mech-card.scout { border-color: rgba(0, 255, 136, 0.3); }
+        .mech-card.scout.active { box-shadow: 0 20px 60px rgba(0, 255, 136, 0.2); }
+        .mech-card.striker { border-color: rgba(0, 212, 255, 0.3); }
+        .mech-card.striker.active { box-shadow: 0 20px 60px rgba(0, 212, 255, 0.2); }
+        .mech-card.vanguard { border-color: rgba(123, 44, 191, 0.3); }
+        .mech-card.vanguard.active { box-shadow: 0 20px 60px rgba(123, 44, 191, 0.2); }
+        .mech-card.omega { border-color: rgba(255, 0, 110, 0.3); }
+        .mech-card.omega.active { box-shadow: 0 20px 60px rgba(255, 0, 110, 0.2); }
+        
+        .mech-tier {
+            font-size: 0.75em;
+            letter-spacing: 0.2em;
+            color: #666;
+            margin-bottom: 10px;
+        }
+        
+        .mech-card-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.4em;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+        
+        .mech-card.scout .mech-card-title { color: var(--neon-green); }
+        .mech-card.striker .mech-card-title { color: var(--neon-blue); }
+        .mech-card.vanguard .mech-card-title { color: var(--neon-purple); }
+        .mech-card.omega .mech-card-title { color: var(--neon-pink); }
+        
+        .mech-card-role {
+            color: #888;
+            font-size: 0.85em;
+            margin-bottom: 15px;
+        }
+        
+        .mech-difficulty {
+            display: flex;
+            gap: 5px;
+        }
+        
+        .difficulty-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+        }
+        
+        .difficulty-dot.filled { background: var(--neon-orange); }
+        
+        /* Mech Detail Panel */
+        .mech-detail-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            margin-bottom: 40px;
+        }
+        
+        .mech-viewer-panel {
+            background: var(--panel-bg);
+            border: 1px solid rgba(0, 212, 255, 0.2);
+            clip-path: polygon(0 15px, 15px 0, calc(100% - 15px) 0, 100% 15px, 100% calc(100% - 15px), calc(100% - 15px) 100%, 15px 100%, 0 calc(100% - 15px));
+            overflow: hidden;
+        }
+        
+        .viewer-header {
+            padding: 20px 25px;
+            border-bottom: 1px solid rgba(0, 212, 255, 0.2);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .viewer-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.2em;
+            color: var(--neon-blue);
+        }
+        
+        .viewer-controls {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .control-btn {
+            background: rgba(0, 212, 255, 0.1);
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            color: #888;
+            padding: 8px 15px;
+            cursor: pointer;
+            font-family: 'Rajdhani', sans-serif;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            font-size: 0.8em;
+        }
+        
+        .control-btn:hover, .control-btn.active {
+            background: rgba(0, 212, 255, 0.2);
+            color: var(--neon-blue);
+            border-color: var(--neon-blue);
+        }
+        
+        #mechCanvas {
+            width: 100%;
+            height: 450px;
+            background: radial-gradient(circle at center, rgba(0, 40, 80, 0.5), rgba(5, 10, 20, 0.95));
+        }
+        
+        .mech-info-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        .info-section {
+            background: var(--panel-bg);
+            border: 1px solid rgba(0, 212, 255, 0.2);
+            padding: 25px;
+            clip-path: polygon(0 10px, 10px 0, calc(100% - 10px) 0, 100% 10px, 100% calc(100% - 10px), calc(100% - 10px) 100%, 10px 100%, 0 calc(100% - 10px));
+        }
+        
+        .info-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .info-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.1em;
+            color: var(--neon-blue);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .info-title::before {
+            content: '◆';
+            color: var(--neon-orange);
+        }
+        
+        .rarity-badge {
+            padding: 5px 15px;
+            font-size: 0.75em;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+        }
+        
+        .rarity-common { background: rgba(136, 136, 136, 0.2); color: #888; border: 1px solid #888; }
+        .rarity-uncommon { background: rgba(0, 255, 136, 0.2); color: var(--neon-green); border: 1px solid var(--neon-green); }
+        .rarity-rare { background: rgba(0, 212, 255, 0.2); color: var(--neon-blue); border: 1px solid var(--neon-blue); }
+        .rarity-epic { background: rgba(123, 44, 191, 0.2); color: var(--neon-purple); border: 1px solid var(--neon-purple); }
+        .rarity-legendary { background: rgba(255, 0, 110, 0.2); color: var(--neon-pink); border: 1px solid var(--neon-pink); box-shadow: 0 0 20px rgba(255, 0, 110, 0.3); }
+        
+        .mech-description {
+            color: #aaa;
+            line-height: 1.7;
+            font-size: 0.95em;
+            margin-bottom: 20px;
+        }
+        
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+        }
+        
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        .stat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .stat-name {
+            color: #888;
+            font-size: 0.85em;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+        
+        .stat-number {
+            font-family: 'Orbitron', sans-serif;
+            color: #fff;
+            font-size: 0.9em;
+        }
+        
+        .stat-bar-bg {
+            height: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .stat-bar-fill {
+            height: 100%;
+            transition: width 0.5s ease;
+            position: relative;
+        }
+        
+        .stat-bar-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            width: 20px;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3));
+        }
+        
+        .stat-attack .stat-bar-fill { background: linear-gradient(90deg, #ff4444, #ff6b6b); box-shadow: 0 0 10px rgba(255, 68, 68, 0.3); }
+        .stat-defense .stat-bar-fill { background: linear-gradient(90deg, #4444ff, #6b6bff); box-shadow: 0 0 10px rgba(68, 68, 255, 0.3); }
+        .stat-speed .stat-bar-fill { background: linear-gradient(90deg, #44ff44, #6bff6b); box-shadow: 0 0 10px rgba(68, 255, 68, 0.3); }
+        .stat-energy .stat-bar-fill { background: linear-gradient(90deg, #ffaa00, #ffcc00); box-shadow: 0 0 10px rgba(255, 170, 0, 0.3); }
+        
+        /* Abilities Section */
+        .abilities-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .ability-item {
+            display: flex;
+            gap: 15px;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.3);
+            border-left: 3px solid var(--neon-blue);
+            transition: all 0.3s ease;
+        }
+        
+        .ability-item:hover {
+            background: rgba(0, 212, 255, 0.05);
+            transform: translateX(5px);
+        }
+        
+        .ability-icon {
+            width: 50px;
+            height: 50px;
+            background: rgba(0, 212, 255, 0.1);
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5em;
+            flex-shrink: 0;
+        }
+        
+        .ability-content h4 {
+            font-family: 'Orbitron', sans-serif;
+            color: #fff;
+            font-size: 0.95em;
+            margin-bottom: 5px;
+        }
+        
+        .ability-content p {
+            color: #888;
+            font-size: 0.85em;
+            line-height: 1.5;
+        }
+        
+        .ability-cost {
+            margin-top: 8px;
+            font-size: 0.75em;
+            color: var(--neon-orange);
+        }
+        
+        /* Materials Required */
+        .materials-section {
+            background: var(--panel-bg);
+            border: 1px solid rgba(0, 212, 255, 0.2);
+            padding: 25px;
+            clip-path: polygon(0 10px, 10px 0, calc(100% - 10px) 0, 100% 10px, 100% calc(100% - 10px), calc(100% - 10px) 100%, 10px 100%, 0 calc(100% - 10px));
+        }
+        
+        .materials-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .material-item {
+            text-align: center;
+            padding: 20px 15px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+        
+        .material-item:hover {
+            border-color: var(--neon-blue);
+            transform: translateY(-3px);
+        }
+        
+        .material-icon {
+            width: 50px;
+            height: 50px;
+            margin: 0 auto 10px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5em;
+        }
+        
+        .material-icon.iron { background: linear-gradient(135deg, #888, #aaa); }
+        .material-icon.titanium { background: linear-gradient(135deg, #aaa, #ddd); }
+        .material-icon.plasma { background: linear-gradient(135deg, var(--neon-blue), #0088ff); box-shadow: 0 0 20px rgba(0, 212, 255, 0.3); }
+        .material-icon.quantum { background: linear-gradient(135deg, var(--neon-purple), #4a0080); box-shadow: 0 0 20px rgba(123, 44, 191, 0.3); }
+        .material-icon.darkmatter { background: linear-gradient(135deg, var(--neon-pink), #800040); box-shadow: 0 0 20px rgba(255, 0, 110, 0.3); }
+        
+        .material-name {
+            font-size: 0.8em;
+            color: #888;
+            margin-bottom: 5px;
+        }
+        
+        .material-amount {
+            font-family: 'Orbitron', sans-serif;
+            color: #fff;
+            font-weight: 700;
+        }
+        
+        /* Forge Button */
+        .forge-section {
+            text-align: center;
+            margin-top: 30px;
+        }
+        
+        .forge-btn {
+            background: linear-gradient(135deg, var(--neon-orange) 0%, var(--neon-pink) 100%);
+            border: none;
+            padding: 20px 60px;
+            color: #fff;
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 900;
+            font-size: 1.2em;
+            cursor: pointer;
+            clip-path: polygon(10% 0, 100% 0, 100% 70%, 90% 100%, 0 100%, 0 30%);
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .forge-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            transition: left 0.5s ease;
+        }
+        
+        .forge-btn:hover::before {
+            left: 100%;
+        }
+        
+        .forge-btn:hover {
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: 0 20px 60px rgba(255, 107, 53, 0.4);
+        }
+        
+        .forge-cost {
+            color: #888;
+            margin-top: 15px;
+            font-size: 0.9em;
+        }
+        
+        .forge-cost span {
+            color: var(--neon-orange);
+            font-weight: 700;
+        }
+        
+        /* Comparison Section */
+        .comparison-section {
+            margin-top: 40px;
+            background: var(--panel-bg);
+            border: 1px solid rgba(0, 212, 255, 0.2);
+            padding: 30px;
+            clip-path: polygon(0 15px, 15px 0, calc(100% - 15px) 0, 100% 15px, 100% calc(100% - 15px), calc(100% - 15px) 100%, 15px 100%, 0 calc(100% - 15px));
+        }
+        
+        .comparison-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.3em;
+            color: var(--neon-blue);
+            margin-bottom: 25px;
+            text-align: center;
+        }
+        
+        .comparison-chart {
+            display: grid;
+            grid-template-columns: 100px 1fr;
+            gap: 15px;
+            align-items: center;
+        }
+        
+        .chart-labels {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        .chart-label {
+            color: #888;
+            font-size: 0.85em;
+            text-align: right;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+        }
+        
+        .chart-bars {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        .chart-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            height: 30px;
+        }
+        
+        .chart-bar {
+            height: 100%;
+            border-radius: 0 3px 3px 0;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding-right: 10px;
+            font-size: 0.75em;
+            font-weight: 700;
+            transition: width 0.5s ease;
+        }
+        
+        .chart-bar.scout { background: linear-gradient(90deg, rgba(0, 255, 136, 0.3), var(--neon-green)); color: #000; }
+        .chart-bar.striker { background: linear-gradient(90deg, rgba(0, 212, 255, 0.3), var(--neon-blue)); color: #000; }
+        .chart-bar.vanguard { background: linear-gradient(90deg, rgba(123, 44, 191, 0.3), var(--neon-purple)); color: #fff; }
+        .chart-bar.omega { background: linear-gradient(90deg, rgba(255, 0, 110, 0.3), var(--neon-pink)); color: #fff; }
+        
+        .chart-legend {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-top: 20px;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.85em;
+        }
+        
+        .legend-color {
+            width: 16px;
+            height: 16px;
+            border-radius: 3px;
+        }
+        
+        .legend-color.scout { background: var(--neon-green); }
+        .legend-color.striker { background: var(--neon-blue); }
+        .legend-color.vanguard { background: var(--neon-purple); }
+        .legend-color.omega { background: var(--neon-pink); }
+        
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .mech-detail-container {
+                grid-template-columns: 1fr;
+            }
+            
+            .mech-selector {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .materials-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Particle Background -->
+    <div class="bg-particles" id="bgParticles"></div>
+    
+    <!-- Header -->
+    <header class="header">
+        <div class="logo">MECHFORGE</div>
+        <nav class="nav-links">
+            <a href="index.html" class="nav-link">Home</a>
+            <a href="aaa-game.html" class="nav-link">Battle</a>
+            <a href="codex.html" class="nav-link active">Codex</a>
+            <a href="history.html" class="nav-link">History</a>
+        </nav>
+        <button class="connect-btn" id="connectBtn">Connect Wallet</button>
+    </header>
+    
+    <!-- Main Content -->
+    <main class="main-content">
+        <h1 class="page-title">MECH CODEX</h1>
+        <p class="page-subtitle">DISCOVER EVERY MECH CLASS, THEIR STATS, ABILITIES & FORGING REQUIREMENTS</p>
+        
+        <!-- Mech Selector -->
+        <div class="mech-selector" id="mechSelector">
+            <!-- Populated by JS -->
+        </div>
+        
+        <!-- Mech Detail Panel -->
+        <div class="mech-detail-container">
+            <div class="mech-viewer-panel">
+                <div class="viewer-header">
+                    <span class="viewer-title">HOLO-VIEWER</span>
+                    <div class="viewer-controls">
+                        <button class="control-btn active" data-view="rotate">AUTO-ROTATE</button>
+                        <button class="control-btn" data-view="wireframe">WIREFRAME</button>
+                    </div>
+                </div>
+                <canvas id="mechCanvas"></canvas>
+            </div>
+            
+            <div class="mech-info-panel">
+                <div class="info-section">
+                    <div class="info-header">
+                        <h3 class="info-title">MECH PROFILE</h3>
+                        <span class="rarity-badge rarity-epic" id="rarityBadge">EPIC</span>
+                    </div>
+                    <p class="mech-description" id="mechDescription">
+                        Heavy assault mech designed for frontline combat. The Striker Titan combines devastating firepower with reinforced armor plating, making it the perfect choice for pilots who prefer to lead the charge.
+                    </p>
+                    
+                    <div class="stats-grid" id="statsGrid">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+                
+                <div class="info-section">
+                    <h3 class="info-title">ABILITIES</h3>
+                    <div class="abilities-list" id="abilitiesList">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Materials Required -->
+        <div class="materials-section">
+            <div class="info-title">FORGING REQUIREMENTS</div>
+            <div class="materials-grid" id="materialsGrid">
+                <!-- Populated by JS -->
+            </div>
+            
+            <div class="forge-section">
+                <button class="forge-btn" id="forgeBtn">🔨 FORGE MECH</button>
+                <p class="forge-cost">Cost: <span>0.05 ETH + Materials</span> + Protocol Fee (5%)</p>
+            </div>
+        </div>
+        
+        <!-- Comparison Section -->
+        <div class="comparison-section">
+            <h3 class="comparison-title">MECH CLASS COMPARISON</h3>
+            <div class="comparison-chart">
+                <div class="chart-labels">
+                    <div class="chart-label">Attack</div>
+                    <div class="chart-label">Defense</div>
+                    <div class="chart-label">Speed</div>
+                    <div class="chart-label">Energy</div>
+                </div>
+                <div class="chart-bars" id="comparisonChart">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+            <div class="chart-legend">
+                <div class="legend-item"><div class="legend-color scout"></div>Scout</div>
+                <div class="legend-item"><div class="legend-color striker"></div>Striker</div>
+                <div class="legend-item"><div class="legend-color vanguard"></div>Vanguard</div>
+                <div class="legend-item"><div class="legend-color omega"></div>Omega</div>
+            </div>
+        </div>
+    </main>
+    
+    <script>
+        // Mech Data
+        const mechsData = {
+            scout: {
+                name: "Scout Raptor",
+                tier: "Tier 1",
+                role: "Reconnaissance & Hit-and-Run",
+                difficulty: 1,
+                rarity: "uncommon",
+                rarityLabel: "UNCOMMON",
+                description: "Lightning-fast reconnaissance mech built for speed and evasion. The Scout Raptor excels at hit-and-run tactics, gathering intelligence, and flanking enemy positions. Its lightweight frame sacrifices armor for unmatched agility.",
+                stats: { attack: 45, defense: 30, speed: 95, energy: 60 },
+                abilities: [
+                    { icon: "⚡", name: "Overdrive", description: "Boost speed by 200% for 5 seconds", cost: "30 Energy" },
+                    { icon: "👁️", name: "Sensor Sweep", description: "Reveal all enemies within 100m", cost: "20 Energy" },
+                    { icon: "💨", name: "Stealth Field", description: "Become invisible for 3 seconds", cost: "50 Energy" }
+                ],
+                materials: { iron: 500, titanium: 200, plasma: 50, quantum: 0, darkmatter: 0 },
+                color: 0x00ff88
+            },
+            striker: {
+                name: "Striker Titan",
+                tier: "Tier 2",
+                role: "Assault & Frontline Combat",
+                difficulty: 2,
+                rarity: "rare",
+                rarityLabel: "RARE",
+                description: "Heavy assault mech designed for frontline combat. The Striker Titan combines devastating firepower with reinforced armor plating, making it the perfect choice for pilots who prefer to lead the charge and break enemy lines.",
+                stats: { attack: 85, defense: 70, speed: 45, energy: 75 },
+                abilities: [
+                    { icon: "💥", name: "Devastator Cannon", description: "Fire a massive energy blast dealing 300% damage", cost: "60 Energy" },
+                    { icon: "🛡️", name: "Fortress Mode", description: "Increase defense by 150% for 8 seconds", cost: "40 Energy" },
+                    { icon: "🔥", name: "Plasma Barrage", description: "Launch 12 homing plasma missiles", cost: "80 Energy" }
+                ],
+                materials: { iron: 800, titanium: 400, plasma: 150, quantum: 25, darkmatter: 0 },
+                color: 0x00d4ff
+            },
+            vanguard: {
+                name: "Vanguard Colossus",
+                tier: "Tier 3",
+                role: "Tank & Area Control",
+                difficulty: 3,
+                rarity: "epic",
+                rarityLabel: "EPIC",
+                description: "Impenetrable fortress on legs. The Vanguard Colossus is the ultimate defensive mech, capable of absorbing massive amounts of damage while protecting allies. Its presence on the battlefield can turn the tide of any engagement.",
+                stats: { attack: 60, defense: 95, speed: 25, energy: 85 },
+                abilities: [
+                    { icon: "🧱", name: "Shield Wall", description: "Deploy an energy barrier blocking all projectiles", cost: "70 Energy" },
+                    { icon: "🌊", name: "Shockwave", description: "Knock back all nearby enemies and stun for 2s", cost: "50 Energy" },
+                    { icon: "🔄", name: "Absorption Field", description: "Convert 50% of damage taken into energy", cost: "Passive" }
+                ],
+                materials: { iron: 1200, titanium: 600, plasma: 300, quantum: 75, darkmatter: 10 },
+                color: 0x7b2cbf
+            },
+            omega: {
+                name: "Omega Apocalypse",
+                tier: "Tier 4",
+                role: "Legendary War Machine",
+                difficulty: 5,
+                rarity: "legendary",
+                rarityLabel: "LEGENDARY",
+                description: "The pinnacle of mech engineering. The Omega Apocalypse is a legendary war machine that combines the best attributes of all other classes. Only the most elite pilots can harness its full devastating potential.",
+                stats: { attack: 100, defense: 85, speed: 70, energy: 100 },
+                abilities: [
+                    { icon: "☢️", name: "Omega Beam", description: "Fire a massive death ray melting everything in its path", cost: "100 Energy" },
+                    { icon: "⚛️", name: "Quantum Shift", description: "Teleport to any location within 200m", cost: "60 Energy" },
+                    { icon: "🔱", name: "Apocalypse Protocol", description: "All stats +100% for 10 seconds", cost: "150 Energy" }
+                ],
+                materials: { iron: 2000, titanium: 1000, plasma: 500, quantum: 200, darkmatter: 50 },
+                color: 0xff006e
+            }
+        };
+        
+        let currentMech = 'striker';
+        let scene, camera, renderer, mechGroup;
+        let isRotating = true;
+        
+        // Initialize
+        function init() {
+            createParticles();
+            renderMechSelector();
+            initMechViewer();
+            updateMechDisplay('striker');
+            renderComparisonChart();
+            
+            // Connect button
+            document.getElementById('connectBtn').addEventListener('click', async () => {
+                if (typeof window.ethereum !== 'undefined') {
+                    try {
+                        await window.ethereum.request({ method: 'eth_requestAccounts' });
+                        document.getElementById('connectBtn').textContent = 'CONNECTED';
+                    } catch (error) {
+                        console.error('Connection failed:', error);
+                    }
+                } else {
+                    alert('Please install MetaMask!');
+                }
+            });
+            
+            // Forge button
+            document.getElementById('forgeBtn').addEventListener('click', () => {
+                alert(`Initiating forge sequence for ${mechsData[currentMech].name}...\n\nIn production, this would initiate a blockchain transaction to forge your mech NFT!`);
+            });
+            
+            // View controls
+            document.querySelectorAll('.control-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.control-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    
+                    if (btn.dataset.view === 'rotate') {
+                        isRotating = !isRotating;
+                    } else if (btn.dataset.view === 'wireframe') {
+                        toggleWireframe();
+                    }
+                });
+            });
+        }
+        
+        // Create background particles
+        function createParticles() {
+            const container = document.getElementById('bgParticles');
+            for (let i = 0; i < 50; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.animationDelay = Math.random() * 10 + 's';
+                particle.style.animationDuration = (Math.random() * 10 + 10) + 's';
+                container.appendChild(particle);
+            }
+        }
+        
+        // Render Mech Selector
+        function renderMechSelector() {
+            const selector = document.getElementById('mechSelector');
+            
+            Object.entries(mechsData).forEach(([key, mech]) => {
+                const card = document.createElement('div');
+                card.className = `mech-card ${key} ${key === currentMech ? 'active' : ''}`;
+                card.innerHTML = `
+                    <div class="mech-tier">${mech.tier}</div>
+                    <div class="mech-card-title">${mech.name}</div>
+                    <div class="mech-card-role">${mech.role}</div>
+                    <div class="mech-difficulty">
+                        ${Array(5).fill(0).map((_, i) => `
+                            <div class="difficulty-dot ${i < mech.difficulty ? 'filled' : ''}"></div>
+                        `).join('')}
+                    </div>
+                `;
+                
+                card.addEventListener('click', () => {
+                    document.querySelectorAll('.mech-card').forEach(c => c.classList.remove('active'));
+                    card.classList.add('active');
+                    currentMech = key;
+                    updateMechDisplay(key);
+                });
+                
+                selector.appendChild(card);
+            });
+        }
+        
+        // Initialize Three.js Viewer
+        function initMechViewer() {
+            const canvas = document.getElementById('mechCanvas');
+            scene = new THREE.Scene();
+            
+            camera = new THREE.PerspectiveCamera(45, canvas.clientWidth / canvas.clientHeight, 0.1, 1000);
+            camera.position.set(0, 1, 5);
+            
+            renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+            renderer.setSize(canvas.clientWidth, canvas.clientHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            
+            // Lighting
+            const ambientLight = new THREE.AmbientLight(0x404040, 2);
+            scene.add(ambientLight);
+            
+            const pointLight = new THREE.PointLight(0x00d4ff, 2, 10);
+            pointLight.position.set(2, 2, 2);
+            scene.add(pointLight);
+            
+            const purpleLight = new THREE.PointLight(0x7b2cbf, 2, 10);
+            purpleLight.position.set(-2, 1, 2);
+            scene.add(purpleLight);
+            
+            animate();
+            
+            window.addEventListener('resize', () => {
+                camera.aspect = canvas.clientWidth / canvas.clientHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(canvas.clientWidth, canvas.clientHeight);
+            });
+        }
+        
+        // Update Mech Display
+        function updateMechDisplay(mechKey) {
+            const mech = mechsData[mechKey];
+            
+            // Update text
+            document.getElementById('rarityBadge').textContent = mech.rarityLabel;
+            document.getElementById('rarityBadge').className = `rarity-badge rarity-${mech.rarity}`;
+            document.getElementById('mechDescription').textContent = mech.description;
+            
+            // Update stats
+            const statsGrid = document.getElementById('statsGrid');
+            statsGrid.innerHTML = '';
+            
+            Object.entries(mech.stats).forEach(([stat, value]) => {
+                const statItem = document.createElement('div');
+                statItem.className = `stat-item stat-${stat}`;
+                statItem.innerHTML = `
+                    <div class="stat-header">
+                        <span class="stat-name">${stat}</span>
+                        <span class="stat-number">${value}/100</span>
+                    </div>
+                    <div class="stat-bar-bg">
+                        <div class="stat-bar-fill" style="width: 0%"></div>
+                    </div>
+                `;
+                statsGrid.appendChild(statItem);
+                
+                // Animate bar
+                setTimeout(() => {
+                    statItem.querySelector('.stat-bar-fill').style.width = value + '%';
+                }, 100);
+            });
+            
+            // Update abilities
+            const abilitiesList = document.getElementById('abilitiesList');
+            abilitiesList.innerHTML = '';
+            
+            mech.abilities.forEach(ability => {
+                const abilityItem = document.createElement('div');
+                abilityItem.className = 'ability-item';
+                abilityItem.innerHTML = `
+                    <div class="ability-icon">${ability.icon}</div>
+                    <div class="ability-content">
+                        <h4>${ability.name}</h4>
+                        <p>${ability.description}</p>
+                        <div class="ability-cost">Cost: ${ability.cost}</div>
+                    </div>
+                `;
+                abilitiesList.appendChild(abilityItem);
+            });
+            
+            // Update materials
+            const materialsGrid = document.getElementById('materialsGrid');
+            materialsGrid.innerHTML = '';
+            
+            const materialIcons = { iron: '🔩', titanium: '⚙️', plasma: '🔥', quantum: '💎', darkmatter: '🌌' };
+            
+            Object.entries(mech.materials).forEach(([material, amount]) => {
+                const materialItem = document.createElement('div');
+                materialItem.className = 'material-item';
+                materialItem.innerHTML = `
+                    <div class="material-icon ${material}">${materialIcons[material]}</div>
+                    <div class="material-name">${material}</div>
+                    <div class="material-amount">${amount}</div>
+                `;
+                materialsGrid.appendChild(materialItem);
+            });
+            
+            // Update 3D model
+            updateMechModel(mech);
+        }
+        
+        // Update 3D Mech Model
+        function updateMechModel(mech) {
+            if (mechGroup) {
+                scene.remove(mechGroup);
+            }
+            
+            mechGroup = new THREE.Group();
+            const color = mech.color;
+            
+            // Materials based on mech
+            const bodyMaterial = new THREE.MeshStandardMaterial({
+                color: 0x1a1a2e,
+                metalness: 0.8,
+                roughness: 0.2,
+                emissive: color,
+                emissiveIntensity: 0.1
+            });
+            
+            const glowMaterial = new THREE.MeshBasicMaterial({ color: color });
+            
+            // Scale based on mech type
+            const scale = mechKey => {
+                if (mechKey === 'scout') return 0.8;
+                if (mechKey === 'vanguard') return 1.3;
+                if (mechKey === 'omega') return 1.2;
+                return 1.0;
+            };
+            
+            const s = scale(currentMech);
+            
+            // Body
+            const bodyGeo = new THREE.BoxGeometry(1 * s, 1.2 * s, 0.8 * s);
+            const body = new THREE.Mesh(bodyGeo, bodyMaterial);
+            mechGroup.add(body);
+            
+            // Head
+            const headGeo = new THREE.BoxGeometry(0.6 * s, 0.5 * s, 0.6 * s);
+            const head = new THREE.Mesh(headGeo, bodyMaterial);
+            head.position.y = 0.9 * s;
+            mechGroup.add(head);
+            
+            // Eyes
+            const eyeGeo = new THREE.BoxGeometry(0.4 * s, 0.1 * s, 0.1 * s);
+            const eye = new THREE.Mesh(eyeGeo, glowMaterial);
+            eye.position.set(0, 0.9 * s, 0.31 * s);
+            mechGroup.add(eye);
+            
+            // Shoulders
+            const shoulderGeo = new THREE.BoxGeometry(0.4 * s, 0.4 * s, 0.4 * s);
+            const leftShoulder = new THREE.Mesh(shoulderGeo, bodyMaterial);
+            leftShoulder.position.set(-0.7 * s, 0.4 * s, 0);
+            mechGroup.add(leftShoulder);
+            
+            const rightShoulder = new THREE.Mesh(shoulderGeo, bodyMaterial);
+            rightShoulder.position.set(0.7 * s, 0.4 * s, 0);
+            mechGroup.add(rightShoulder);
+            
+            // Arms
+            const armGeo = new THREE.BoxGeometry(0.25 * s, 0.8 * s, 0.25 * s);
+            const leftArm = new THREE.Mesh(armGeo, bodyMaterial);
+            leftArm.position.set(-0.7 * s, -0.2 * s, 0);
+            mechGroup.add(leftArm);
+            
+            const rightArm = new THREE.Mesh(armGeo, bodyMaterial);
+            rightArm.position.set(0.7 * s, -0.2 * s, 0);
+            mechGroup.add(rightArm);
+            
+            // Weapon (varies by mech)
+            const weaponGeo = new THREE.CylinderGeometry(0.1 * s, 0.15 * s, 1.5 * s);
+            const weaponMaterial = new THREE.MeshStandardMaterial({
+                color: color,
+                metalness: 0.9,
+                roughness: 0.1,
+                emissive: color,
+                emissiveIntensity: 0.5
+            });
+            const weapon = new THREE.Mesh(weaponGeo, weaponMaterial);
+            weapon.position.set(0.7 * s, -0.5 * s, 0.3 * s);
+            mechGroup.add(weapon);
+            
+            // Extra details for higher tiers
+            if (currentMech === 'vanguard' || currentMech === 'omega') {
+                const shieldGeo = new THREE.BoxGeometry(0.1 * s, 1.5 * s, 1 * s);
+                const shield = new THREE.Mesh(shieldGeo, bodyMaterial);
+                shield.position.set(-0.9 * s, 0, 0.3 * s);
+                mechGroup.add(shield);
+            }
+            
+            if (currentMech === 'omega') {
+                const wingGeo = new THREE.BoxGeometry(0.5 * s, 0.1 * s, 1.2 * s);
+                const leftWing = new THREE.Mesh(wingGeo, weaponMaterial);
+                leftWing.position.set(-0.5 * s, 0.5 * s, -0.5 * s);
+                mechGroup.add(leftWing);
+                
+                const rightWing = new THREE.Mesh(wingGeo, weaponMaterial);
+                rightWing.position.set(0.5 * s, 0.5 * s, -0.5 * s);
+                mechGroup.add(rightWing);
+            }
+            
+            scene.add(mechGroup);
+        }
+        
+        // Animation Loop
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            if (mechGroup && isRotating) {
+                mechGroup.rotation.y += 0.005;
+            }
+            
+            if (mechGroup) {
+                mechGroup.position.y = Math.sin(Date.now() * 0.001) * 0.05;
+            }
+            
+            renderer.render(scene, camera);
+        }
+        
+        // Toggle wireframe
+        function toggleWireframe() {
+            if (!mechGroup) return;
+            mechGroup.traverse(child => {
+                if (child.isMesh) {
+                    child.material.wireframe = !child.material.wireframe;
+                }
+            });
+        }
+        
+        // Render Comparison Chart
+        function renderComparisonChart() {
+            const chart = document.getElementById('comparisonChart');
+            const stats = ['attack', 'defense', 'speed', 'energy'];
+            
+            stats.forEach(stat => {
+                const row = document.createElement('div');
+                row.className = 'chart-row';
+                
+                Object.entries(mechsData).forEach(([key, mech]) => {
+                    const value = mech.stats[stat];
+                    const bar = document.createElement('div');
+                    bar.className = `chart-bar ${key}`;
+                    bar.style.width = value + '%';
+                    bar.textContent = value;
+                    row.appendChild(bar);
+                });
+                
+                chart.appendChild(row);
+            });
+        }
+        
+        // Start
+        init();
+    </script>
+</body>
+</html>

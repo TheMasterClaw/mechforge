@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>404 — MECH NOT FOUND</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        :root {
+            --neon-blue: #00d4ff;
+            --neon-red: #ff2a2a;
+            --neon-orange: #ff6b35;
+            --dark-bg: #050510;
+        }
+        
+        body {
+            font-family: 'Rajdhani', sans-serif;
+            background: var(--dark-bg);
+            color: #fff;
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        /* Glitch Background */
+        .glitch-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                repeating-linear-gradient(
+                    0deg,
+                    rgba(255, 42, 42, 0.03) 0px,
+                    transparent 1px,
+                    transparent 2px,
+                    rgba(255, 42, 42, 0.03) 3px
+                );
+            pointer-events: none;
+            animation: scanline 8s linear infinite;
+        }
+        
+        @keyframes scanline {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(100vh); }
+        }
+        
+        /* Container */
+        .error-container {
+            text-align: center;
+            z-index: 10;
+            padding: 40px;
+        }
+        
+        /* Error Code */
+        .error-code {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 12em;
+            font-weight: 900;
+            line-height: 1;
+            position: relative;
+            animation: glitch 2s infinite;
+        }
+        
+        .error-code::before,
+        .error-code::after {
+            content: '404';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+        
+        .error-code::before {
+            color: var(--neon-red);
+            animation: glitch-1 0.3s infinite;
+            clip-path: polygon(0 0, 100% 0, 100% 35%, 0 35%);
+        }
+        
+        .error-code::after {
+            color: var(--neon-blue);
+            animation: glitch-2 0.3s infinite;
+            clip-path: polygon(0 65%, 100% 65%, 100% 100%, 0 100%);
+        }
+        
+        @keyframes glitch {
+            0%, 100% { transform: translate(0); }
+            20% { transform: translate(-2px, 2px); }
+            40% { transform: translate(-2px, -2px); }
+            60% { transform: translate(2px, 2px); }
+            80% { transform: translate(2px, -2px); }
+        }
+        
+        @keyframes glitch-1 {
+            0%, 100% { transform: translate(0); }
+            20% { transform: translate(3px, 0); }
+            40% { transform: translate(-3px, 0); }
+        }
+        
+        @keyframes glitch-2 {
+            0%, 100% { transform: translate(0); }
+            20% { transform: translate(-3px, 0); }
+            40% { transform: translate(3px, 0); }
+        }
+        
+        /* Error Message */
+        .error-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.8em;
+            color: var(--neon-red);
+            margin: 20px 0 10px;
+            letter-spacing: 0.2em;
+        }
+        
+        .error-message {
+            color: #888;
+            font-size: 1.1em;
+            max-width: 500px;
+            margin: 0 auto 30px;
+            line-height: 1.6;
+        }
+        
+        /* Terminal Effect */
+        .terminal {
+            background: rgba(0, 0, 0, 0.8);
+            border: 1px solid rgba(255, 42, 42, 0.3);
+            padding: 20px 25px;
+            max-width: 500px;
+            margin: 0 auto 30px;
+            text-align: left;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85em;
+        }
+        
+        .terminal-line {
+            color: #666;
+            margin-bottom: 5px;
+        }
+        
+        .terminal-line.error {
+            color: var(--neon-red);
+        }
+        
+        .terminal-line.success {
+            color: var(--neon-blue);
+        }
+        
+        .cursor {
+            display: inline-block;
+            width: 8px;
+            height: 15px;
+            background: var(--neon-blue);
+            animation: blink 1s infinite;
+            vertical-align: middle;
+            margin-left: 5px;
+        }
+        
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+        
+        /* Action Buttons */
+        .error-actions {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .error-btn {
+            background: transparent;
+            border: 2px solid var(--neon-blue);
+            color: var(--neon-blue);
+            padding: 15px 35px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.85em;
+            text-decoration: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            clip-path: polygon(10% 0, 100% 0, 100% 70%, 90% 100%, 0 100%, 0 30%);
+        }
+        
+        .error-btn:hover {
+            background: var(--neon-blue);
+            color: #000;
+            box-shadow: 0 0 30px rgba(0, 212, 255, 0.5);
+        }
+        
+        .error-btn.primary {
+            background: linear-gradient(135deg, var(--neon-orange) 0%, var(--neon-red) 100%);
+            border: none;
+            color: #fff;
+        }
+        
+        .error-btn.primary:hover {
+            box-shadow: 0 0 30px rgba(255, 107, 53, 0.5);
+        }
+        
+        /* Mech Icon */
+        .mech-icon {
+            font-size: 4em;
+            margin-bottom: 20px;
+            animation: mech-broken 3s ease-in-out infinite;
+        }
+        
+        @keyframes mech-broken {
+            0%, 100% { transform: rotate(-5deg); }
+            25% { transform: rotate(5deg) translateY(-5px); }
+            50% { transform: rotate(-3deg); }
+            75% { transform: rotate(3deg); }
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .error-code {
+                font-size: 6em;
+            }
+            
+            .error-title {
+                font-size: 1.2em;
+            }
+            
+            .terminal {
+                font-size: 0.75em;
+                padding: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="glitch-bg"></div>
+    
+    <div class="error-container">
+        <div class="mech-icon">🤖💥</div>
+        
+        <div class="error-code">404</div>
+        
+        <h1 class="error-title">MECH NOT FOUND</h1>
+        
+        <p class="error-message">
+            The mech you're looking for has been destroyed in battle or never existed. 
+            Our reconnaissance drones couldn't locate the requested sector.
+        </p>
+        
+        <div class="terminal">
+            <div class="terminal-line">> System.scan(target="unknown_sector")...</div>
+            <div class="terminal-line error">> ERROR: Coordinates not found</div>
+            <div class="terminal-line">> Battle.log_check()...</div>
+            <div class="terminal-line error">> WARNING: Mech signature lost</div>
+            <div class="terminal-line">> Recovery.protocol_init()...</div>
+            <div class="terminal-line success">> Redirecting to safe zone<span class="cursor"></span></div>
+        </div>
+        
+        <div class="error-actions">
+            <a href="index.html" class="error-btn primary">🏠 Return to Base</a>
+            <a href="aaa-game.html" class="error-btn">⚔️ Enter Battle</a>
+        </div>
+    </div>
+    
+    <script>
+        // Random glitch effect
+        setInterval(() => {
+            const code = document.querySelector('.error-code');
+            code.style.textShadow = `${Math.random() * 10 - 5}px ${Math.random() * 10 - 5}px ${Math.random() * 20}px rgba(255, 42, 42, 0.8)`;
+            
+            setTimeout(() => {
+                code.style.textShadow = 'none';
+            }, 100);
+        }, 3000);
+        
+        // Terminal typing effect
+        const lines = document.querySelectorAll('.terminal-line');
+        lines.forEach((line, index) => {
+            line.style.opacity = '0';
+            setTimeout(() => {
+                line.style.opacity = '1';
+                line.style.transition = 'opacity 0.3s ease';
+            }, index * 400);
+        });
+    </script>
+</body>
+</html>
